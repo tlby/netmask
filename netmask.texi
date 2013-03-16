@@ -130,7 +130,7 @@ decimal and the binary negation of the netmask plus one.
 
 Today netmask is written in C, and instead of for loops it does a slew
 of bit manipulation.  It also accepts and reports common formats
-including CIDR, regular address and netmask pairs and cisco style masks.
+including CIDR, regular address and netmask pairs and Cisco style masks.
 
 It allows those netadmins who don't count on their hands in binary
 to come up with efficient firewalling and routing rules which would
@@ -147,7 +147,7 @@ optimization was provided by Tom Lear.
 
 Here are some realistic examples of running @code{netmask}.
 
-This is the output of the command @samp{netmask 10.0.0.0:10.0.0.25}:
+This is the output of the command @samp{netmask 10.0.0.0,10.0.0.25}:
 
 @example
        10.0.0.0/28
@@ -164,7 +164,7 @@ This is the output of the command
 @end example
 
 This is the output of the command
-@samp{netmask --standard 10.0.0.0:+24}:
+@samp{netmask --standard 10.0.0.0,+24}:
 
 @example
        10.0.0.0/255.255.255.240
@@ -192,9 +192,9 @@ A @var{spec} is an address specification, it can look like:
 @table @samp
 @item @var{address}
 One address.
-@item @var{address1}:@var{address2}
+@item @var{address1},@var{address2}
 All addresses from @var{address1} to @var{address2}.
-@item @var{address1}:+@var{address2}
+@item @var{address1},+@var{address2}
 All addresses from @var{address1} to @var{address1} + @var{address2}.
 @item @var{address}/@var{mask}
 A group starting at @var{address} spanning @var{mask}
@@ -207,6 +207,8 @@ An @var{address} is an internet network address, it can look like:
 An internet hostname.
 @item 209.81.8.252
 A standard dotted quad internet address notation.
+@item 2001:0db8:0000:0000:0000:ff00:0042:8329
+An RFC5952 IPv6 internet address.
 @item 100
 A decimal number (100 in this case).
 @item 0100
@@ -223,12 +225,14 @@ A dotted quad netmask (@code{netmask} will complain if it is not a valid
 netmask)
 @item 0.0.31.255
 A Cisco style inverse netmask (with the same checks).
+@item ffff:ffff::
+An RFC5952 IPv6 internet address.  (with the same checks)
 @item 8
-The number of bits set to one from the left (CIDR notation).
+CIDR notation (The number of bits set to one from the left).
 @item 010
-The number of bits set to one from the left in octal.
+Octal CIDR.
 @item 0x10
-The number of bits set to one from the left in hexadecimal.
+hexadecimal CIDR.
 @end table
 
 @code{netmask} supports the following options:
@@ -247,7 +251,7 @@ and then exit.
 @itemx -d
 @cindex debug
 Print status or progress information on stderr.  Probably only useful to
-me and subject to change pretty much at my will.
+the author and subject to change at will.
 
 @item --standard
 @itemx -s
@@ -327,8 +331,8 @@ output you expected.@refill
 
 If you have other questions, comments or suggestions about
 @code{netmask}, contact Talby via electronic mail to
-@w{@samp{talby@@trap.mtview.ca.us}}.  Talby will try to help
-you out, although he may not have time to fix your problems.
+@w{@samp{talby@@trap.mtview.ca.us}}.  Talby will try to help you out,
+although he may not have the resources to fix your problems.
 
 @node Concept Index, , Problems, Top
 @unnumbered Concept Index

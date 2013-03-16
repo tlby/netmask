@@ -1,4 +1,4 @@
-This is netmask.info, produced by makeinfo version 4.6 from
+This is netmask.info, produced by makeinfo version 4.13 from
 netmask.texi.
 
 INFO-DIR-SECTION General Commands
@@ -47,8 +47,8 @@ network masks.
 
 File: netmask.info,  Node: Instructions,  Next: Copying,  Up: Top
 
-How to Read This Manual
-***********************
+1 How to Read This Manual
+*************************
 
 To read this manual, begin at the beginning, reading from left to right
 and top to bottom, until you get to the end.  Then stop.  You may pause
@@ -64,9 +64,10 @@ GNU GENERAL PUBLIC LICENSE
 **************************
 
                          Version 2, June 1991
+
      Copyright (C) 1989, 1991 Free Software Foundation, Inc.
      675 Mass Ave, Cambridge, MA 02139, USA
-     
+
      Everyone is permitted to copy and distribute verbatim copies
      of this license document, but changing it is not allowed.
 
@@ -328,7 +329,6 @@ modification follow.
      and reuse of software generally.
 
                                 NO WARRANTY
-
  12. BECAUSE THE PROGRAM IS LICENSED FREE OF CHARGE, THERE IS NO
      WARRANTY FOR THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE
      LAW.  EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT
@@ -352,7 +352,6 @@ modification follow.
      ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
 
                       END OF TERMS AND CONDITIONS
-
 How to Apply These Terms to Your New Programs
 =============================================
 
@@ -368,17 +367,17 @@ the "copyright" line and a pointer to where the full notice is found.
 
      ONE LINE TO GIVE THE PROGRAM'S NAME AND AN IDEA OF WHAT IT DOES.
      Copyright (C) 19YY  NAME OF AUTHOR
-     
+
      This program is free software; you can redistribute it and/or
      modify it under the terms of the GNU General Public License
      as published by the Free Software Foundation; either version 2
      of the License, or (at your option) any later version.
-     
+
      This program is distributed in the hope that it will be useful,
      but WITHOUT ANY WARRANTY; without even the implied warranty of
      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
      GNU General Public License for more details.
-     
+
      You should have received a copy of the GNU General Public License
      along with this program; if not, write to the Free Software
      Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
@@ -409,7 +408,7 @@ if necessary.  Here is a sample; alter the names:
      interest in the program `Gnomovision'
      (which makes passes at compilers) written
      by James Hacker.
-     
+
      SIGNATURE OF TY COON, 1 April 1989
      Ty Coon, President of Vice
 
@@ -422,8 +421,8 @@ GNU Library General Public License instead of this License.
 
 File: netmask.info,  Node: Overview,  Next: Sample,  Prev: Copying,  Up: Top
 
-Overview
-********
+2 Overview
+**********
 
 The `netmask' program accepts and produces a variety of common network
 address and netmask formats.  Not only can it convert address and
@@ -443,7 +442,7 @@ decimal and the binary negation of the netmask plus one.
 
    Today netmask is written in C, and instead of for loops it does a
 slew of bit manipulation.  It also accepts and reports common formats
-including CIDR, regular address and netmask pairs and cisco style masks.
+including CIDR, regular address and netmask pairs and Cisco style masks.
 
    It allows those netadmins who don't count on their hands in binary
 to come up with efficient firewalling and routing rules which would
@@ -457,12 +456,12 @@ optimization was provided by Tom Lear.
 
 File: netmask.info,  Node: Sample,  Next: Invoking netmask,  Prev: Overview,  Up: Top
 
-Sample Output
-*************
+3 Sample Output
+***************
 
 Here are some realistic examples of running `netmask'.
 
-   This is the output of the command `netmask 10.0.0.0:10.0.0.25':
+   This is the output of the command `netmask 10.0.0.0,10.0.0.25':
 
             10.0.0.0/28
             10.0.0.16/29
@@ -474,7 +473,7 @@ Here are some realistic examples of running `netmask'.
             10.1.0.0/16
             10.2.0.0/15
 
-   This is the output of the command `netmask --standard 10.0.0.0:+24':
+   This is the output of the command `netmask --standard 10.0.0.0,+24':
 
             10.0.0.0/255.255.255.240
            10.0.0.16/255.255.255.248
@@ -483,32 +482,35 @@ Here are some realistic examples of running `netmask'.
 
 File: netmask.info,  Node: Invoking netmask,  Next: Problems,  Prev: Sample,  Up: Top
 
-Invoking `netmask'
-******************
+4 Invoking `netmask'
+********************
 
 The format for running the `netmask' program is:
 
      netmask OPTION SPEC [SPEC ...]
 
-   A SPEC is an address specification, it can look like:
+   A SPEC is an address specification, it can look like: 
 `ADDRESS'
      One address.
 
-`ADDRESS1:ADDRESS2'
+`ADDRESS1,ADDRESS2'
      All addresses from ADDRESS1 to ADDRESS2.
 
-`ADDRESS1:+ADDRESS2'
+`ADDRESS1,+ADDRESS2'
      All addresses from ADDRESS1 to ADDRESS1 + ADDRESS2.
 
 `ADDRESS/MASK'
      A group starting at ADDRESS spanning MASK
 
-   An ADDRESS is an internet network address, it can look like:
+   An ADDRESS is an internet network address, it can look like: 
 `ftp.gnu.org'
      An internet hostname.
 
 `209.81.8.252'
      A standard dotted quad internet address notation.
+
+`2001:0db8:0000:0000:0000:ff00:0042:8329'
+     An RFC5952 IPv6 internet address.
 
 `100'
      A decimal number (100 in this case).
@@ -519,7 +521,7 @@ The format for running the `netmask' program is:
 `0x100'
      A hexadecimal number preceded by "0x" (256 in this case).
 
-   A MASK is a network mask, it can look like:
+   A MASK is a network mask, it can look like: 
 `255.255.224.0'
      A dotted quad netmask (`netmask' will complain if it is not a valid
      netmask)
@@ -527,14 +529,17 @@ The format for running the `netmask' program is:
 `0.0.31.255'
      A Cisco style inverse netmask (with the same checks).
 
+`ffff:ffff::'
+     An RFC5952 IPv6 internet address.  (with the same checks)
+
 `8'
-     The number of bits set to one from the left (CIDR notation).
+     CIDR notation (The number of bits set to one from the left).
 
 `010'
-     The number of bits set to one from the left in octal.
+     Octal CIDR.
 
 `0x10'
-     The number of bits set to one from the left in hexadecimal.
+     hexadecimal CIDR.
 
    `netmask' supports the following options:
 
@@ -551,7 +556,7 @@ The format for running the `netmask' program is:
 `--debug'
 `-d'
      Print status or progress information on stderr.  Probably only
-     useful to me and subject to change pretty much at my will.
+     useful to the author and subject to change at will.
 
 `--standard'
 `-s'
@@ -597,8 +602,8 @@ The format for running the `netmask' program is:
 
 File: netmask.info,  Node: Problems,  Next: Concept Index,  Prev: Invoking netmask,  Up: Top
 
-Reporting Bugs
-**************
+5 Reporting Bugs
+****************
 
 If you find a bug in `netmask', please send electronic mail to
 `netmask-bug@trap.mtview.ca.us'.  Include the version number, which you
@@ -608,7 +613,7 @@ the output that the program produced and the output you expected.
    If you have other questions, comments or suggestions about
 `netmask', contact Talby via electronic mail to
 `talby@trap.mtview.ca.us'.  Talby will try to help you out, although he
-may not have time to fix your problems.
+may not have the resources to fix your problems.
 
 
 File: netmask.info,  Node: Concept Index,  Prev: Problems,  Up: Top
@@ -616,46 +621,47 @@ File: netmask.info,  Node: Concept Index,  Prev: Problems,  Up: Top
 Concept Index
 *************
 
+ [index ]
 * Menu:
 
-* address:                               Invoking netmask.
-* binary:                                Invoking netmask.
-* bugs:                                  Problems.
-* CIDR:                                  Invoking netmask.
-* cidr:                                  Invoking netmask.
-* cisco:                                 Invoking netmask.
-* debug:                                 Invoking netmask.
-* DNS:                                   Invoking netmask.
-* getting help:                          Invoking netmask.
-* help:                                  Invoking netmask.
-* hexadecimal:                           Invoking netmask.
-* how to read:                           Instructions.
-* invoking:                              Invoking netmask.
-* manual, how to read:                   Instructions.
-* mask:                                  Invoking netmask.
-* octal:                                 Invoking netmask.
-* options:                               Invoking netmask.
-* overview:                              Overview.
-* problems:                              Problems.
-* range:                                 Invoking netmask.
-* reading:                               Instructions.
-* sample:                                Sample.
-* spec:                                  Invoking netmask.
-* standard:                              Invoking netmask.
-* tail recursion:                        Concept Index.
-* usage:                                 Invoking netmask.
-* version:                               Invoking netmask.
+* address:                               Invoking netmask.    (line  23)
+* binary:                                Invoking netmask.    (line 113)
+* bugs:                                  Problems.            (line   6)
+* CIDR:                                  Invoking netmask.    (line  86)
+* cidr:                                  Invoking netmask.    (line  86)
+* cisco:                                 Invoking netmask.    (line  91)
+* debug:                                 Invoking netmask.    (line  76)
+* DNS:                                   Invoking netmask.    (line 118)
+* getting help:                          Invoking netmask.    (line   6)
+* help:                                  Invoking netmask.    (line   6)
+* hexadecimal:                           Invoking netmask.    (line 103)
+* how to read:                           Instructions.        (line   6)
+* invoking:                              Invoking netmask.    (line   6)
+* manual, how to read:                   Instructions.        (line   6)
+* mask:                                  Invoking netmask.    (line  42)
+* octal:                                 Invoking netmask.    (line 108)
+* options:                               Invoking netmask.    (line   6)
+* overview:                              Overview.            (line   6)
+* problems:                              Problems.            (line   6)
+* range:                                 Invoking netmask.    (line  97)
+* reading:                               Instructions.        (line   6)
+* sample:                                Sample.              (line   6)
+* spec:                                  Invoking netmask.    (line  10)
+* standard:                              Invoking netmask.    (line  81)
+* tail recursion:                        Concept Index.       (line   6)
+* usage:                                 Invoking netmask.    (line   6)
+* version:                               Invoking netmask.    (line   6)
 
 
 
 Tag Table:
-Node: Top1026
-Node: Instructions1448
-Node: Copying1935
-Node: Overview21090
-Node: Sample22786
-Node: Invoking netmask23422
-Node: Problems26127
-Node: Concept Index26750
+Node: Top1027
+Node: Instructions1449
+Node: Copying1940
+Node: Overview21069
+Node: Sample22769
+Node: Invoking netmask23409
+Node: Problems26190
+Node: Concept Index26826
 
 End Tag Table

@@ -1,3 +1,11 @@
+netmask (2.4.0) unstable; urgency=low
+
+  * IPv6 support added.
+  * Bugfix: Cisco style masks assumed more cautiously.
+  * Perform dns lookups less agressively.
+
+ -- Robert Stone <talby@trap.mtview.ca.us>  Tue, 19 Feb 2013 14:18:24 -0800
+
 netmask (2.3.6) unstable; urgency=low
 
   * Debian policy compliance updates.

@@ -487,6 +487,8 @@ NM nm_merge(NM dst, NM src) {
             /* pull the dst elt */
             tmp = *pos;
             *pos = (*pos)->next;
+            if(src->domain == AF_INET)
+                src->domain = tmp->domain;
             free(tmp);
             /* widen the src elt */
             src->mask = u128_lsh(src->mask, 1);

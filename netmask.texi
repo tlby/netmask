@@ -1,0 +1,341 @@
+\input texinfo @c -*-texinfo-*-
+@c %**start of header
+@setfilename netmask.info
+@settitle Generating Optimized Network Masks
+@finalout
+@setchapternewpage odd
+@c %**end of header
+
+@dircategory General Commands
+@include version.texi
+%@set EDITION 2.02
+%@set VERSION 2.2
+%@set UPDATED 26 May 1999
+
+@ifinfo
+This file documents the @code{netmask} command for generating terse
+network masks.
+
+Manual adapted from GNU Hello Manual
+
+Adaptation Copyright (c) 1999 Robert Stone
+
+GNU Hello Manual Copyright (C) 1992, 1993 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+@ignore
+Permission is granted to process this file through TeX and print the
+results, provided the printed document carries copying permission
+notice identical to this one except for the removal of this paragraph
+(this paragraph not being relevant to the printed manual).
+
+@end ignore
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by the Foundation.
+@end ifinfo
+
+@titlepage
+@title Mask
+@subtitle The Network Mask Generation Program
+@subtitle Edition @value{EDITION}, for Hello Version @value{VERSION}
+@subtitle @value{UPDATED}
+@author by Robert Stone
+
+@page
+@vskip 0pt plus 1filll
+Manual adapted from GNU Hello Manual
+
+Adaptation Copyright (c) 1999 Robert Stone
+
+GNU Hello Manual Copyright @copyright{} 1992, 1993 Free Software Foundation,
+Inc.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the entire
+resulting derived work is distributed under the terms of a permission
+notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that this permission notice may be stated in a translation approved
+by the Foundation.
+@end titlepage
+
+@node Top, , , (dir)
+
+@ifinfo
+This file documents the @code{netmask} command for generating terse
+network masks.
+@end ifinfo
+
+@menu
+* Instructions::	How to read this manual. 
+* Copying::		How you can copy and share @code{netmask}.
+* Overview::		Preliminary information.
+* Sample::		Sample output from @code{netmask}.
+* Invoking netmask::	How to run @code{netmask}.
+* Problems::		Reporting bugs.
+* Concept Index::	Index of concepts.
+@end menu
+
+@node Instructions, Copying, , Top
+@chapter How to Read This Manual
+
+@cindex reading
+@cindex manual, how to read
+@cindex how to read
+To read this manual, begin at the beginning, reading from left to right
+and top to bottom, until you get to the end.  Then stop.  You may pause
+for a beer anywhere in the middle as well, if you wish.  (Please note,
+however, that The King strongly advises against heavy use of
+prescription pharmaceuticals, based on his extensive personal and
+professional experience.)
+
+@node Copying, Overview, Instructions, Top
+@include gpl.texi
+
+@node Overview, Sample, Copying, Top
+@chapter Overview
+@cindex overview
+
+The `netmask' program accepts and produces a variety of common network
+address and netmask formats.  Not only can it convert address and
+netmask notations, but it will optimize the masks to generate the
+smallest list of rules.  This is very handy if you've ever configured a
+firewall or router and some nasty network administrator before you
+decided that base 10 numbers were good places to start and end groups
+of machines.  Since I often have trouble even describing the process of
+generating optimal netmasks to fledgling network administrators, this
+seemed like a much better solution.
+
+I originally had a 32 line perl script to do this using nested for
+loops, but I found it too slow to deal with real internet addresses, so
+it only worked well with the last 8 bits.  It couldn't merge ranges at
+all and it also only reported in one format... network address in
+decimal and the binary negation of the netmask plus one.
+
+Today netmask is written in C, and instead of for loops it does a slew
+of bit manipulation.  It also accepts and reports common formats
+including CIDR, regular address and netmask pairs and cisco style masks.
+
+It allows those netadmins who don't count on their hands in binary
+to come up with efficient firewalling and routing rules which would
+otherwise be unavailable to them making their router config files
+cluttered and their firewalls inefficient.  Because it is protected by
+the GNU General Public License, users are free to share and change it.
+
+@code{netmask} was written by Robert Stone.  Some algorithm design and
+optimization was provided by Tom Lear.
+
+@node Sample, Invoking netmask, Overview, Top
+@chapter Sample Output
+@cindex sample
+
+Here are some realistic examples of running @code{netmask}.
+
+This is the output of the command @samp{netmask 10.0.0.0:10.0.0.25}:
+
+@example
+       10.0.0.0/28
+       10.0.0.16/29
+       10.0.0.24/31
+@end example
+
+This is the output of the command
+@samp{netmask 10.1.0.0/16 10.2.0.0/16 10.3.0.0/16}:
+
+@example
+       10.1.0.0/16
+       10.2.0.0/15
+@end example
+
+This is the output of the command
+@samp{netmask --standard 10.0.0.0:+24}:
+
+@example
+       10.0.0.0/255.255.255.240
+      10.0.0.16/255.255.255.248
+      10.0.0.24/255.255.255.255
+@end example
+
+@node Invoking netmask, Problems, Sample, Top
+@chapter Invoking @code{netmask}
+@cindex invoking
+@cindex version
+@cindex options
+@cindex usage
+@cindex help
+@cindex getting help
+
+The format for running the @code{netmask} program is:
+
+@example
+netmask @var{option} @var{spec} [@var{spec} @dots{}]
+@end example
+
+A @var{spec} is an address specification, it can look like:
+@cindex spec
+@table @samp
+@item @var{address}
+One address.
+@item @var{address1}:@var{address2}
+All addresses from @var{address1} to @var{address2}.
+@item @var{address1}:+@var{address2}
+All addresses from @var{address1} to @var{address1} + @var{address2}.
+@item @var{address}/@var{mask}
+A group starting at @var{address} spanning @var{mask}
+@end table
+
+An @var{address} is an internet network address, it can look like:
+@cindex address
+@table @samp
+@item ftp.gnu.org
+An internet hostname.
+@item 209.81.8.252
+A standard dotted quad internet address notation.
+@item 100
+A decimal number (100 in this case).
+@item 0100
+An octal number preceded by "0" (64 in this case).
+@item 0x100
+A hexadecimal number preceded by "0x" (256 in this case).
+@end table
+
+A @var{mask} is a network mask, it can look like:
+@cindex mask
+@table @samp
+@item 255.255.224.0
+A dotted quad netmask (@code{netmask} will complain if it is not a valid
+netmask)
+@item 0.0.31.255
+A Cisco style inverse netmask (with the same checks).
+@item 8
+The number of bits set to one from the left (CIDR notation).
+@item 010
+The number of bits set to one from the left in octal.
+@item 0x10
+The number of bits set to one from the left in hexadecimal.
+@end table
+
+@code{netmask} supports the following options:
+
+@table @samp
+@item --help
+@itemx -h
+Print an informative help message describing the options and then exit.
+
+@item --version
+@itemx -v
+Print the version number of @code{netmask} on the standard error output
+and then exit.
+
+@item --debug
+@itemx -d
+@cindex debug
+Print status or progress information on stderr.  Probably only useful to
+me and subject to change pretty much at my will.
+
+@item --standard
+@itemx -s
+@cindex standard
+Formats output as standard address and netmask pairs, such as:
+@example
+     10.1.8.128/255.255.255.224
+@end example
+
+@item --cidr
+@itemx -c
+@cindex cidr
+@cindex CIDR
+Formats output in CIDR notation, such as:
+@example
+     10.1.8.128/27
+@end example
+
+@item --cisco
+@itemx -i
+@cindex cisco
+Formats output in the style accepted by Cisco 2500 series router
+config files, such as:
+@example
+     10.1.8.128 0.0.0.31
+@end example
+
+@item --range
+@itemx -r
+@cindex range
+Formats output as a set of ranges and the number of addresses
+contained in them, such as:
+@example
+     10.1.8.128-10.1.8.159      (32)
+@end example
+
+@item --hex
+@itemx -x
+@cindex hexadecimal
+Formats output as hexadecimal address and netmask pairs, such as:
+@example
+0x0a010880/0xffffffe0
+@end example
+
+@item --octal
+@itemx -o
+@cindex octal
+Formats output as octal addresses and netmask pairs, such as:
+@example
+01200204200/037777777740
+@end example
+
+@item --binary
+@itemx -b
+@cindex binary
+Formats output as binary addresses and netmask pairs, such as:
+@example
+00001010 00000001 00001000 10000000 / 11111111 11111111 11111111 11100000
+@end example
+
+@item --nodns
+@itemx -n
+@cindex DNS
+Disables dns lookups on input addresses.
+@end table
+
+@node Problems, Concept Index, Invoking netmask, Top
+@chapter Reporting Bugs
+@cindex bugs
+@cindex problems
+
+If you find a bug in @code{netmask}, please send electronic mail
+to @w{@samp{netmask-bug@@trap.mtview.ca.us}}.  Include the version
+number, which you can find by running @w{@samp{netmask --version}}.  Also
+include in your message the output that the program produced and the
+output you expected.@refill
+
+If you have other questions, comments or suggestions about
+@code{netmask}, contact Talby via electronic mail to
+@w{@samp{talby@@trap.mtview.ca.us}}.  Talby will try to help
+you out, although he may not have time to fix your problems.
+
+@node Concept Index, , Problems, Top
+@unnumbered Concept Index
+
+@cindex tail recursion
+@printindex cp
+
+@shortcontents
+@contents
+@bye

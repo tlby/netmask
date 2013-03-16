@@ -1,0 +1,3 @@
+@set UPDATED 14 February 2002
+@set EDITION 2.3.7
+@set VERSION 2.3.7

@@ -1,0 +1,35 @@
+#!/usr/bin/perl
+#-------------------------------------------------------------------------------
+
+sub bitmask {
+	local ($low,$high,$top)=(@_);
+
+	return if($low>$high);
+	# get highest bit needed for calculation
+	if($top eq ""){
+		for($top=1;$top<$high;$top*=2){}
+	}
+	for(local $i=$top;$i>=1;$i/=2) {
+		for(local $j=0;$j<=$top;$j+=$i) {
+			if($j>=$low&&$j+$i-1<=$high) {
+				return(&bitmask($low,$j-1,$top),
+				"$j-". ( $j + ( $i - 1 ) ) ."/$i",
+				&bitmask($j+$i,$high,$top));
+			}
+		}
+	}
+}
+
+for(@ARGV) {
+	/^[0-9]+-[0-9]+$/ && do {
+		@a=split("-",$_);
+		if($a[0]>$a[1]) {
+			warn "first number must be smaller in a sequence\n";
+			next;
+		}
+		print "[$a[0]-$a[1]]\n";
+		print " ".join("\n ",&bitmask(@a))."\n";
+		next;
+	};
+	warn "\"$_\" not expected\n";
+}

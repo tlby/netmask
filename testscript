@@ -1,0 +1,38 @@
+#!/bin/sh
+
+in=testdata
+out=test.out
+
+i=0
+
+case "$1"
+in
+  '')
+    while read line
+    do	i=`expr $i + 1`
+	name="${line%|*}"
+	args="${line#*|}"
+	echo -n "Testing $name... "
+	if ! ./netmask $args > "$out" || ! diff "$in.$i" "$out"
+	then
+	    echo ""
+	    echo "The $name test failed."
+	    echo ""
+	    exit 1
+	else
+	    echo "done."
+	    rm -f "$out"
+	fi
+    done < "$in" ;;
+  update)
+    set -e
+    while read line
+    do	i=`expr $i + 1`
+	name="${line%|*}"
+	args="${line#*|}"
+	echo -n "Building $name test in $in.$i... "
+	./netmask $args > "$in.$i"
+	echo "done."
+    done < "$in" ;;
+  *) echo "Usage: $0 [ update ]" ;;
+esac

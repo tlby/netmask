@@ -1,0 +1,23 @@
+simple one element| 0
+simple multi element| 0 2 4 6 8
+input formats| 0 02 0x4 0.0.0.6
+simple ranges| 100:200
+CIDR ranges| 12.34.56.78/20
+large ranges| 1:0x7ffffffe 0x80000001:0xfffffffe
+output format standard| --standard 0 2 4 6 8
+output format cidr| --cidr 0 2 4 6 8 077777777 0xffffffff
+output format cisco| --cisco 0 2 4 6 8 077777777 0xffffffff
+output format range| --range 0 2 4 6 8 077777777 0xffffffff
+output format hex| --hex 0 2 4 6 8 077777777 0xffffffff
+output format octal| --octal 0 2 4 6 8 077777777 0xffffffff
+output format binary| --binary 0 2 4 6 8 077777777 0xffffffff
+subset skipping| 345 100:200 105 45 200
+subset cleaning| 105 45 200 100:200 345
+range joining| 10.1.0.0/16 10.2.0.0/16 10.3.0.0/16 10.4.0.0/16
+entire range joining| 10.0.0.0/16 10.1.0.0/16 10.2.0.0/16 10.3.0.0/16
+boundary dottedq|192.168.0.1/0.0.0.0
+boundary dottedq|192.168.0.1/255.0.0.0
+boundary dottedq|192.168.0.1/255.255.0.0
+boundary dottedq|192.168.0.1/255.255.255.0
+boundary dottedq|192.168.0.1/255.255.255.255
+boundary dottedq|192.168.0.1/0.255.255.255

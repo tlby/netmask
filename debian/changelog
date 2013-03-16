@@ -1,0 +1,73 @@
+netmask (2.3.10) unstable; urgency=low
+
+  * debian/rules
+    - Correct debian-rules-ignores-make-clean-error lintian warning.
+  * debian/control
+    - Bump debian standards version to 3.7.3 (No changes)
+  * debian/copyright
+    - Rewrite the Copyright notice.
+
+ -- Luis Uribe <acme@eviled.org>  Sat, 05 Jul 2008 00:52:37 -0500
+
+netmask (2.3.9) unstable; urgency=low
+
+  * New maintainer (Closes: #389664)
+  * debian/rules
+    Remove commented dh_* commands
+
+ -- Luis Uribe <acme@eviled.org>  Fri, 23 Feb 2007 11:59:47 -0500
+
+netmask (2.3.8) unstable; urgency=low
+
+  * QA upload.
+  * Set maintainer to QA Group; Orphaned: #389664
+  * Fix spelling mistake in description (Closes: #390063)
+  * Fix override disparity (set Section: net)
+  * Conforms with latest Standards Version 3.7.2
+
+ -- Michael Ablassmeier <abi@debian.org>  Tue, 10 Oct 2006 11:27:55 +0200
+
+netmask (2.3.7) unstable; urgency=low
+
+  * Repaired dotted quad broadcast and single mask (closes: #212674)
+
+ -- Robert Stone <talby@debian.org>  Thu, 25 Sep 2003 14:01:55 -0700
+
+netmask (2.3.6) unstable; urgency=low
+
+  * Debian policy compliance updates.
+
+ -- Robert Stone <talby@debian.org>  Thu,  3 Apr 2003 13:51:53 -0800
+
+netmask (2.3.5) unstable; urgency=low
+
+  * Fixed typo in description (closes: #94632)
+  * Add build-dependencies, including texinfo (closes: #111181).
+
+ -- Robert Stone <talby@debian.org>  Thu, 14 Feb 2002 11:08:14 -0800
+
+netmask (2.3.4) unstable; urgency=low
+
+  * Bugfix: infodoc install cleanup. (closes: #69210)
+  * Bugfix: circular list state hang.
+
+ -- Robert Stone <talby@debian.org>  Wed, 30 Aug 2000 13:46:23 -0700
+
+netmask (2.3.3) unstable frozen; urgency=low
+
+  * Bugfix: dublicate entry addition segfault
+
+ -- Robert Stone <talby@debian.org>  Wed,  1 Mar 2000 10:29:28 -0800
+
+netmask (2.3.2) unstable; urgency=low
+
+  * Debian packaging cleanup.
+
+ -- Robert Stone <talby@debian.org>  Fri,  5 Nov 1999 11:18:23 -0800
+
+netmask (2.3.1) unstable; urgency=low
+
+  * Initial Release.
+
+ -- Robert Stone <talby@debian.org>  Mon, 30 Aug 1999 20:36:48 -0700
+

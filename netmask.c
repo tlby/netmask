@@ -164,7 +164,7 @@ static inline u128_t u128_cidr(uint8_t n) {
 }
 static inline int cidr(u128_t u) {
     uint64_t v;
-    int n;
+    int n = 0;
     for(v = u.l; v > 0; v <<= 1) n++;
     for(v = u.h; v > 0; v <<= 1) n++;
     return n;

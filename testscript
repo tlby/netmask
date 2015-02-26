@@ -1,38 +1,82 @@
 #!/bin/sh
+netmask="./netmask"
 
-in=testdata
-out=test.out
-
-i=0
+RET=0
 
 case "$1"
 in
   '')
-    while read line
-    do	i=`expr $i + 1`
-	name="${line%|*}"
-	args="${line#*|}"
-	echo -n "Testing $name... "
-	if ! ./netmask $args > "$out" || ! diff "$in.$i" "$out"
-	then
-	    echo ""
-	    echo "The $name test failed."
-	    echo ""
-	    exit 1
-	else
-	    echo "done."
-	    rm -f "$out"
-	fi
-    done < "$in" ;;
+    i=0
+    check () {
+      i=$(expr $i + 1)
+      eval $3 | diff -au $2 -
+      if test $? -eq 0
+      then echo "ok $i - $1"
+      else echo "not ok $i - $1" ; RET=1
+      fi
+    }
+    ;;
   update)
-    set -e
-    while read line
-    do	i=`expr $i + 1`
-	name="${line%|*}"
-	args="${line#*|}"
-	echo -n "Building $name test in $in.$i... "
-	./netmask $args > "$in.$i"
-	echo "done."
-    done < "$in" ;;
+    check () {
+      if test -e "$2"
+      then echo "skip $2, file exists"
+      else
+        echo -n "make $2..."
+        eval $3 > "$2"
+        echo " done"
+      fi
+    }
+    ;;
   *) echo "Usage: $0 [ update ]" ;;
 esac
+
+echo "1..23"
+
+check "simple one element" tests/simple \
+    "$netmask 0"
+check "simple multi element" tests/simple2 \
+    "$netmask 0 2 4 6 8"
+check "input formats" tests/inputs \
+    "$netmask 0 02 0x4 0.0.0.6"
+check "simple ranges" tests/range \
+    "$netmask 100:200"
+check "CIDR ranges" tests/range_cidr \
+    "$netmask 12.34.56.78/20"
+check "large ranges" tests/range_large \
+    "$netmask 1:0x7ffffffe 0x80000001:0xfffffffe"
+check "output format standard" tests/output_std \
+    "$netmask --standard 0 2 4 6 8"
+check "output format cidr" tests/output_cidr \
+    "$netmask --cidr 0 2 4 6 8 077777777 0xffffffff"
+check "output format cisco" tests/output_cisco \
+    "$netmask --cisco 0 2 4 6 8 077777777 0xffffffff"
+check "output format range" tests/output_range \
+    "$netmask --range 0 2 4 6 8 077777777 0xffffffff"
+check "output format hex" tests/output_hex \
+    "$netmask --hex 0 2 4 6 8 077777777 0xffffffff"
+check "output format octal" tests/output_octal \
+    "$netmask --octal 0 2 4 6 8 077777777 0xffffffff"
+check "output format binary" tests/output_binary \
+    "$netmask --binary 0 2 4 6 8 077777777 0xffffffff"
+check "subset skipping" tests/subset_skip \
+    "$netmask 345 100:200 105 45 200"
+check "subset clean" tests/subset_clean \
+    "$netmask 105 45 200 100:200 345"
+check "range joining" tests/range_join \
+    "$netmask 10.1.0.0/16 10.2.0.0/16 10.3.0.0/16 10.4.0.0/16"
+check "entire range joining" tests/range_join2 \
+    "$netmask 10.0.0.0/16 10.1.0.0/16 10.2.0.0/16 10.3.0.0/16"
+check "boundary dottedq 1" tests/bounds_dq1 \
+    "$netmask 192.168.0.1/0.0.0.0"
+check "boundary dottedq 1" tests/bounds_dq2 \
+    "$netmask 192.168.0.1/255.0.0.0"
+check "boundary dottedq 1" tests/bounds_dq3 \
+    "$netmask 192.168.0.1/255.255.0.0"
+check "boundary dottedq 1" tests/bounds_dq4 \
+    "$netmask 192.168.0.1/255.255.255.0"
+check "boundary dottedq 1" tests/bounds_dq5 \
+    "$netmask 192.168.0.1/255.255.255.255"
+check "boundary dottedq 1" tests/bounds_dq6 \
+    "$netmask 192.168.0.1/0.255.255.255"
+
+exit $RET

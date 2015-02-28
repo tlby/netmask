@@ -18,6 +18,7 @@
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #include <arpa/inet.h>
+#include <errno.h>
 #include <getopt.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -51,6 +52,7 @@ struct option longopts[] = {
   { "octal",	0, 0, 'o' },
   { "binary",	0, 0, 'b' },
   { "nodns",	0, 0, 'n' },
+  { "files",	0, 0, 'f' },
 //  { "max",	1, 0, 'M' },
 //  { "min",	1, 0, 'm' },
   { NULL,	0, 0, 0   }
@@ -270,24 +272,31 @@ void display(NM nm, output_t style) {
   nm_walk(nm, disp);
 }
 
+static inline void add_entry(NM *nm, const char *str, int dns) {
+  NM new = nm_new_str(str, dns);
+  if(new)
+    *nm = nm_merge(*nm, new);
+  else
+    warn("parse error \"%s\"", str);
+}
 
 int main(int argc, char *argv[]) {
-  int optc, h = 0, v = 0, debug = 0, dns = 1, lose = 0;
+  int optc, h = 0, v = 0, f = 0, dns = NM_USE_DNS, lose = 0;
 //  u_int32_t min = ~0, max = 0;
   output_t output = OUT_CIDR;
 
   progname = argv[0];
   initerrors(progname, 0, 0); /* stderr, nostatus */
-  while((optc = getopt_long(argc, argv, "shoxdrvbincM:m:", longopts,
+  while((optc = getopt_long(argc, argv, "shoxdrvbincM:m:f", longopts,
     (int *) NULL)) != EOF) switch(optc) {
    case 'h': h = 1;   break;
    case 'v': v++;     break;
    case 'n': dns = 0; break;
+   case 'f': f = 1;   break;
 //   case 'M': max = mspectou32(optarg); break;
 //   case 'm': min = mspectou32(optarg); break;
    case 'd':
     initerrors(NULL, -1, 1); /* showstatus */
-    debug = 1;
     break;
    case 's': output = OUT_STD;    break;
    case 'c': output = OUT_CIDR;   break;
@@ -318,6 +327,7 @@ int main(int argc, char *argv[]) {
       "  -o, --octal\t\t\tOutput address/netmask pairs in octal\n"
       "  -b, --binary\t\t\tOutput address/netmask pairs in binary\n"
       "  -n, --nodns\t\t\tDisable DNS lookups for addresses\n"
+      "  -f, --files\t\t\tTreat arguments as input files\n"
 //      "  -M, --max mask\t\tLimit maximum mask size\n"
 //      "  -m, --min mask\t\tLimit minimum mask size (drop small ranges)\n"
       "Definitions:\n"
@@ -340,13 +350,20 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
   NM nm = NULL;
-  while(optind < argc) {
-    NM new = nm_new_str(argv[optind], dns ? NM_USE_DNS : 0);
-    if(new)
-      nm = nm_merge(nm, new);
-    else
-      warn("parse error \"%s\"", argv[optind]);
-    optind++;
+  for(;optind < argc; optind++) {
+    if(f) {
+      char buf[1024];
+      FILE *fp = strncmp(argv[optind], "-", 2) ?
+        fopen(argv[optind], "r") : stdin;
+      if(!fp) {
+        fprintf(stderr, "fopen: %s: %s\n",
+          argv[optind], strerror(errno));
+        continue;
+      }
+      while(fscanf(fp, "%1023s", buf) != EOF)
+        add_entry(&nm, buf, dns);
+    } else
+      add_entry(&nm, argv[optind], dns);
   }
   display(nm, output);
   return(0);

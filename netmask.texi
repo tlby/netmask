@@ -316,6 +316,11 @@ Formats output as binary addresses and netmask pairs, such as:
 @itemx -n
 @cindex DNS
 Disables dns lookups on input addresses.
+
+@item --files
+@itemx -f
+@cindex files
+Treat arguments as input files.
 @end table
 
 @node Problems, Concept Index, Invoking netmask, Top

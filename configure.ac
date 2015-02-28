@@ -1,6 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(main.c)
-AM_INIT_AUTOMAKE(netmask, "2.4.0")
+AC_INIT([netmask], [2.4.1])
+AC_CONFIG_SRCDIR([main.c])
+AM_INIT_AUTOMAKE
+
 
 dnl Checks for programs.
 : ${CFLAGS='-Wall -g -O6'}

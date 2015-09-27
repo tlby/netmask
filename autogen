@@ -1,0 +1,6 @@
+#! /bin/sh
+set -e -x
+${ACLOCAL-aclocal}
+${AUTOHEADER-autoheader}
+${AUTOMAKE-automake} --add-missing --copy --force-missing
+${AUTOCONF-autoconf}

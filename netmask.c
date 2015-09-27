@@ -32,7 +32,7 @@ typedef struct {
 
 static inline u128_t u128_add(u128_t x, u128_t y, int *carry) {
     /* this relies on the sum being greater than both terms of the
-     * addition, otherwise an overflow must have occured. */
+     * addition, otherwise an overflow must have occurred. */
     u128_t rv;
     rv.l = x.l + y.l;
     if(rv.l < x.l || rv.l < y.l)

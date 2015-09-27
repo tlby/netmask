@@ -1,6 +1,3 @@
-We are pleased to announce the version 2.3 test release of Netmask.
-This is the initial public release.
-
 This is a handy tool for generating terse netmasks in several common
 formats.  If you've ever maintained a firewall with more than a few rules
 in it, you might use netmask to clean up and generalize sloppy rules left by

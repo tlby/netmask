@@ -1,3 +1,11 @@
+netmask (2.4.2) unstable; urgency=low
+
+  * adds an "autogen" script to run the auto tools
+  * tidy/update stale docs
+  * clean up several spelling errors
+
+ -- Robert Stone <talby@trap.mtview.ca.us>  Mon, 28 Sep 2015 12:51:35 -0700
+
 netmask (2.4.0) unstable; urgency=low
 
   * IPv6 support added.

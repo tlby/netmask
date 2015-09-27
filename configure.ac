@@ -1,11 +1,12 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT([netmask], [2.4.1])
+AC_INIT([netmask], [2.4.2])
 AC_CONFIG_SRCDIR([main.c])
+AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE
 
 
 dnl Checks for programs.
-: ${CFLAGS='-Wall -g -O6'}
+: ${CFLAGS='-Wall -g -O3'}
 AC_PROG_CC
 AC_PROG_AWK
 AC_PROG_INSTALL

@@ -32,6 +32,7 @@
 
 #include "netmask.h"
 #include "errors.h"
+#include "config.h"
 
 struct addrmask {
   u_int32_t neta;

@@ -22,3 +22,4 @@ test-driver
 texinfo.tex
 version.texi
 netmask
+aclocal.m4

@@ -78,5 +78,11 @@ check "boundary dottedq 1" tests/bounds_dq5 \
     "$netmask 192.168.0.1/255.255.255.255"
 check "boundary dottedq 1" tests/bounds_dq6 \
     "$netmask 192.168.0.1/0.255.255.255"
+check "range adds" tests/range_adds \
+    "$netmask 10.0.0.1,+5 172.16.29.1:+7"
+check "range order" tests/range_order \
+    "$netmask 200:100"
+check "range special" tests/range_special \
+    "$netmask 0.0.0.5:+-2"
 
 exit $RET

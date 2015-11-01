@@ -371,9 +371,19 @@ static inline int nm_widen(NM self, u128_t max, u128_t *last) {
     return cmp;
 }
 
+static inline void nm_order(NM *low, NM *high) {
+    if(u128_cmp((*low)->neta, (*high)->neta) > 0) {
+        NM tmp = *low;
+        *low = *high;
+        *high = tmp;
+    }
+}
+
 /* convert first and last into a list from first to last.  (both these
  * should be single addresses, not lists.) */
 static inline NM nm_seq(NM first, NM last) {
+    /* if first is higher than last, swap them (legacy) */
+    nm_order(&first, &last);
     NM cur = first;
     u128_t pos = cur->neta;
     u128_t one = u128_lit(0, 1);
@@ -441,15 +451,52 @@ NM nm_new_str(const char *str, int flags) {
         return self;
     } else if((p = strchr(str, ':'))) { /* old range character (sloppy) */
         NM top;
+        int add;
         strncpy(buf, str, p - str);
         buf[p - str] = '\0';
         self = parse_addr(buf, flags);
         if(!self)
             return NULL;
-        top = parse_addr(p + 1, flags);
+        if(p[1] == '+') {
+            add = 1;
+            if(p[2] == '-') {
+                /* this is a pretty special reverse compatibility
+                 * situation.  N:+-5" would actually emit the range from
+                 * N-5 to N because strtoul() hilariously accepts
+                 * negative numbers and the original code never detected
+                 * overflow and things just happened to work out. */
+                struct in_addr s;
+                char *endp;
+                uint32_t v = self->neta.l + strtoul(p + 2, &endp, 0);
+                if(*endp == '\0') {
+                    s.s_addr = htonl(v);
+                    top = nm_new_v4(&s);
+                    if(!top) {
+                        free(self);
+                        return NULL;
+                    }
+                    return nm_seq(self, top);
+                }
+            }
+        } else {
+            add = 0;
+        }
+
+        top = parse_addr(p + add + 1, flags);
         if(!top) {
             free(self);
             return NULL;
+        }
+        if(add) {
+            int carry;
+            if(is_v4(top))
+                top->neta.l &= 0xffffffffULL;
+            top->neta = u128_add(self->neta, top->neta, &carry);
+            if(carry) {
+                free(self);
+                free(top);
+                return NULL;
+            }
         }
         return nm_seq(self, top);
     } else {

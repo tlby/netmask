@@ -66,7 +66,7 @@ int status(const char *fmt, ...) {
 
     if(!show_status) return(0);
     va_start(args, fmt);
-    vsprintf(buf, fmt, args);
+    vsnprintf(buf, sizeof(buf), fmt, args);
     va_end(args);
     return(message(LOG_DEBUG, buf));
 }
@@ -76,7 +76,7 @@ int warn(const char *fmt, ...) {
     va_list args;
 
     va_start(args, fmt);
-    vsprintf(buf, fmt, args);
+    vsnprintf(buf, sizeof(buf), fmt, args);
     va_end(args);
     return(message(LOG_WARNING, buf));
 }
@@ -86,7 +86,7 @@ int panic(const char *fmt, ...) {
     va_list args;
 
     va_start(args, fmt);
-    vsprintf(buf, fmt, args);
+    vsnprintf(buf, sizeof(buf), fmt, args);
     va_end(args);
     message(LOG_ERR, buf);
     exit(1);
@@ -97,7 +97,7 @@ int message(int priority, const char *msg) {
 
     /* only handle errno if this is not an informational message */
     if(errno && priority < 5) {
-	sprintf(buf, "%s: %s", msg, strerror(errno));
+	snprintf(buf, sizeof(buf), "%s: %s", msg, strerror(errno));
 	errno = 0;
     } else strcpy(buf, msg);
     if(use_syslog) syslog(priority, "%s", buf);

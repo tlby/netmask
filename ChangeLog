@@ -1,3 +1,9 @@
+netmask (2.4.4) unstable; urgency=low
+
+  * harden error logging functions
+
+ -- Robert Stone <talby@trap.mtview.ca.us>  Thu, 31 Jan 2019 09:26:52 -0800
+
 netmask (2.4.3) unstable; urgency=low
 
   * repair broken ":+" style range additions for #802884

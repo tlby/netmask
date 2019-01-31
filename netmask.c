@@ -307,10 +307,10 @@ static inline int parse_mask(NM self, const char *str, int flags) {
     if(*p == '\0') {
         /* read it as a CIDR value */
         if(is_v4(self)) {
-            if(v < 0 || v > 32) return 0;
+            if(v > 32) return 0;
             v += 96;
         } else {
-            if(v < 0 || v > 128) return 0;
+            if(v > 128) return 0;
         }
         self->mask = u128_cidr(v);
     } else if(inet_pton(AF_INET6, str, &s6)) {

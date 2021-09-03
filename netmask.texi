@@ -83,7 +83,7 @@ network masks.
 @end ifinfo
 
 @menu
-* Instructions::	How to read this manual. 
+* Instructions::	How to read this manual.
 * Copying::		How you can copy and share @code{netmask}.
 * Overview::		Preliminary information.
 * Sample::		Sample output from @code{netmask}.

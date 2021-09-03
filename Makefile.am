@@ -1,4 +1,3 @@
-
 bin_PROGRAMS = netmask
 netmask_SOURCES = main.c netmask.c netmask.h errors.c errors.h
 

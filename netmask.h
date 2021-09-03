@@ -1,4 +1,3 @@
-
 #include <netinet/in.h>
 #include <netdb.h>
 
@@ -22,4 +21,3 @@ typedef union {
 } nm_addr;
 
 void nm_walk(NM, void (*)(int domain, nm_addr *neta, nm_addr *mask));
-

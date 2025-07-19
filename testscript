@@ -1,6 +1,11 @@
 #!/bin/sh
 netmask="./netmask"
 
+if [ "$srcdir" ]
+then base="$srcdir/"
+else base=""
+fi
+
 RET=0
 
 case "$1"
@@ -9,7 +14,7 @@ in
     i=0
     check () {
       i=$(expr $i + 1)
-      eval $3 | diff -au $2 -
+      eval $3 | diff -au "$base$2" -
       if test $? -eq 0
       then echo "ok $i - $1"
       else echo "not ok $i - $1" ; RET=1
@@ -18,10 +23,10 @@ in
     ;;
   update)
     check () {
-      if test -e "$2"
+      if test -e "$base$2"
       then echo "skip $2, file exists"
       else
-        echo -n "make $2..."
+        echo -n "make $base$2..."
         eval $3 > "$2"
         echo " done"
       fi
@@ -84,5 +89,19 @@ check "range order" tests/range_order \
     "$netmask 200:100"
 check "range special" tests/range_special \
     "$netmask 0.0.0.5:+-2"
+check "ipv6 simple" tests/ipv6_simple \
+    "$netmask ::0 ::2 ::4 ::6 ::8"
+check "coverage 1" tests/coverage1 \
+    "$netmask -r 12 12/24 12/16 2000::/64 2001::/::ffff"
+check "v6 cisco" tests/v6_cisco \
+    "$netmask -i 2000::/32"
+check "v6_hex" tests/v6_hex \
+    "$netmask -x 2000::/32"
+check "v6 octal" tests/v6_octal \
+    "$netmask -o 2000::/32"
+check "v6 binary" tests/v6_binary \
+    "$netmask -b 2000::/32"
+check "file input" tests/file_input \
+    "echo 1.2.3.4 | $netmask -f -"
 
 exit $RET

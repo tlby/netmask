@@ -7,10 +7,11 @@
 @c %**end of header
 
 @dircategory General Commands
+@direntry
+* netmask: (netmask).   A netmask generation and conversion program.
+@end direntry
+
 @include version.texi
-%@set EDITION 2.02
-%@set VERSION 2.2
-%@set UPDATED 26 May 1999
 
 @ifinfo
 This file documents the @code{netmask} command for generating terse
@@ -332,7 +333,7 @@ If you find a bug in @code{netmask}, please send electronic mail
 to @w{@samp{netmask-bug@@trap.mtview.ca.us}}.  Include the version
 number, which you can find by running @w{@samp{netmask --version}}.  Also
 include in your message the output that the program produced and the
-output you expected.@refill
+output you expected.
 
 If you have other questions, comments or suggestions about
 @code{netmask}, contact Talby via electronic mail to

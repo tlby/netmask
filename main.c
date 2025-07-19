@@ -273,16 +273,19 @@ void display(NM nm, output_t style) {
   nm_walk(nm, disp);
 }
 
-static inline void add_entry(NM *nm, const char *str, int dns) {
+static inline int add_entry(NM *nm, const char *str, int dns) {
   NM new = nm_new_str(str, dns);
-  if(new)
+  if(new) {
     *nm = nm_merge(*nm, new);
-  else
+    return 0;
+  } else {
     warn("parse error \"%s\"", str);
+    return 1;
+  }
 }
 
 int main(int argc, char *argv[]) {
-  int optc, h = 0, v = 0, f = 0, dns = NM_USE_DNS, lose = 0;
+  int optc, h = 0, v = 0, f = 0, dns = NM_USE_DNS, lose = 0, rv = 0;
 //  u_int32_t min = ~0, max = 0;
   output_t output = OUT_CIDR;
 
@@ -362,10 +365,10 @@ int main(int argc, char *argv[]) {
         continue;
       }
       while(fscanf(fp, "%1023s", buf) != EOF)
-        add_entry(&nm, buf, dns);
+        rv |= add_entry(&nm, buf, dns);
     } else
-      add_entry(&nm, argv[optind], dns);
+      rv |= add_entry(&nm, argv[optind], dns);
   }
   display(nm, output);
-  return(0);
+  return(rv);
 }

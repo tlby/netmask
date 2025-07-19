@@ -1,3 +1,149 @@
+netmask (2.4.5) UNRELEASED; urgency=medium
+
+  * New upstream release.
+
+ -- Robert Stone <talby@trap.mtview.ca.us>  Sun, 20 Jul 2025 08:03:00 -0700
+
+netmask (2.4.4-4) unstable; urgency=medium
+
+  * Update standards version to 4.6.2, no changes needed.
+  * d/clean: Cleanup generated files after build. (Closes: #1048271)
+  * Add autopkgtest with the upstream test suite.
+  * Salsa CI: Remove default configuration file.
+
+ -- Guilhem Moulin <guilhem@debian.org>  Fri, 01 Mar 2024 19:35:41 +0100
+
+netmask (2.4.4-3) unstable; urgency=medium
+
+  * Rename Debian branch to debian/latest for DEP-14 compliance.
+  * Add d/salsa-ci.yml file for GitLab CI.
+  * Refresh patches.
+  * Update watch file format version to 4.
+  * Bump Standards-Version to 4.5.1 (no changes necessary).
+
+ -- Guilhem Moulin <guilhem@debian.org>  Tue, 05 Jan 2021 17:28:39 +0100
+
+netmask (2.4.4-2) unstable; urgency=medium
+
+  [ Guilhem Moulin ]
+  * d/control: Set 'Rules-Requires-Root: no'.
+  * d/control: Bump debhelper compatibility level to 13.
+  * d/control: Bump Standards-Version to 4.5.0 (no changes necessary).
+  * d/upstream/metadata: Set fields Bug-Database, Bug-Submit,
+    Repository-Browse.
+
+  [ Debian Janitor ]
+  * Trim trailing whitespace.
+  * Set debhelper-compat version in Build-Depends.
+  * Set fields Upstream-Name in debian/copyright.
+  * Drop unnecessary dependency on dh-autoreconf.
+  * Remove obsolete fields Name from debian/upstream/metadata.
+
+ -- Guilhem Moulin <guilhem@debian.org>  Tue, 02 Jun 2020 15:36:25 +0200
+
+netmask (2.4.4-1) unstable; urgency=medium
+
+  [ Robert Stone ]
+  * New upstream release.
+
+  [ Guilhem Moulin ]
+  * d/upstream/signing-key.asc: Minimize upstream's OpenPGP certificate.
+  * d/control: Bump Standards-Version to 4.3.0 (no changes necessary).
+  * d/control, d/compat: Bump debhelper compatibility level to 12, hence
+    remove dh-autoreconf to Build-Depends.
+
+ -- Guilhem Moulin <guilhem@debian.org>  Tue, 05 Feb 2019 19:45:41 +0100
+
+netmask (2.4.3-3) unstable; urgency=low
+
+  * debian/control:
+    + Bump Standards-Version to 4.1.4 (no changes necessary).
+    + Migrate Vcs-Browser and Vcs-Git from Alioth to Salsa.
+
+ -- Guilhem Moulin <guilhem@debian.org>  Tue, 05 Jun 2018 17:14:50 +0200
+
+netmask (2.4.3-2) unstable; urgency=low
+
+  * debian/rules: Add 'hardening=+bindnow,+pie' to DEB_BUILD_MAINT_OPTIONS to
+    compile ELF executables as PIEs and allow the PLT to be marked read-only.
+  * debian/control:
+    + Bump Standards-Version to 4.0.0 (no changes necessary).
+    + Upgrade Vcs-Git URI from git:// to https://.
+
+ -- Guilhem Moulin <guilhem@debian.org>  Sat, 08 Jul 2017 11:30:33 +0200
+
+netmask (2.4.3-1) unstable; urgency=low
+
+  [ Robert Stone ]
+  * New upstream release.  (Closes: #802884.)
+
+  [ Guilhem Moulin ]
+  * debian/patches:
+    + Make the build reproducible: setting --version twice no longer prints
+      the build timestamp.
+  * debian/control:
+    + Change 'Vcs-Git' and 'Vcs-Browser' fields to use collab-maint.
+    + Set 'Multi-Arch: foreign'.
+  * debian/patches:
+    + Remove 'Add foreign to AM_INIT_AUTOMAKE macro' patch, applied upstream.
+  * Fix debian/watch file.
+
+ -- Guilhem Moulin <guilhem@guilhem.org>  Mon, 05 Oct 2015 18:43:32 +0200
+
+netmask (2.4.2-1) unstable; urgency=low
+
+  [ Robert Stone ]
+  * New upstream release.  (Closes: #79512.)
+
+  [ Guilhem Moulin ]
+  * New maintainer.  (Closes: #784185.)
+  * debian/compat: bump debhelper compatibility level from 4 to 9.
+  * debian/source/format: 3.0 (quilt)
+  * debian/control:
+    + Bump Standards-Version to 3.9.6 (no changes necessary).
+    + Add 'Homepage', 'Vcs-Git', 'Vcs-Browser' fields.
+    + Add 'dh-autoreconf' and 'texinfo' to Build-Depends.
+  * debian/copyright: convert to machine-readable format (1.0).
+  * debian/gbp.conf: add file.
+  * debian/patches:
+    + netmask.texi: Add the missing '@direntry' to the info document.
+    + Add foreign to AM_INIT_AUTOMAKE macro.
+  * Remove debian.{dirs,info}, which are taken care of by the upstream build
+    system.
+  * debian/watch: add file.
+  * debian/upstream/metadata: add file.
+  * debian/upstream/signing-key.asc: add keyfile used to sign upstream release
+    tags.
+
+ -- Guilhem Moulin <guilhem@guilhem.org>  Tue, 29 Sep 2015 01:53:57 +0200
+
+netmask (2.3.12) unstable; urgency=low
+
+  * Include patches directly in source because it's a native package
+  * debian/control
+    - Bump debian standards version to 3.8.4 (No changes)
+  * Switch to dpkg-source 3.0 (native) format
+
+ -- Luis Uribe <acme@eviled.org>  Sat, 24 Apr 2010 12:15:37 -0500
+
+netmask (2.3.11) unstable; urgency=low
+
+  * Adding quilt for manage patches
+  * debian/control
+    - Bump debian standards version to 3.8.3 (No changes)
+    - Add dpkg (>= 1.15.4) | install-info and ${misc:Depends} to Depends:
+  * README.source
+    - Add file
+  * debian/compat
+    - Update to 5
+  * debian/copyright
+    - Change GPL2 symlink. Makes lintian happy.
+  * debian/rules
+    - Remove config.sub and config.guess in the clean target and copy the files
+      just before the "./configure" call.
+
+ -- Luis Uribe <acme@eviled.org>  Wed, 18 Nov 2009 00:52:37 -0500
+
 netmask (2.3.10) unstable; urgency=low
 
   * debian/rules
@@ -70,4 +216,3 @@ netmask (2.3.1) unstable; urgency=low
   * Initial Release.
 
  -- Robert Stone <talby@debian.org>  Mon, 30 Aug 1999 20:36:48 -0700
-

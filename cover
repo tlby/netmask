@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -ex
+make clean || true
+env CFLAGS= ./configure --enable-code-coverage
+make check-code-coverage
+
+# this will create a netmask-$(VERSION)-coverage directory with a
+# detailed html report including annotated source code lines

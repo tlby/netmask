@@ -1,25 +1,22 @@
-*.o
-
-.deps
-INSTALL
-Makefile
-Makefile.in
+# autotools generated
+aclocal.m4
+aminclude_static.am
 autom4te.cache
 compile
-config.h
+config.guess
 config.h.in
-config.log
-config.status
+config.sub
 configure
 depcomp
+.deps
+INSTALL
 install-sh
+Makefile.in
 mdate-sh
 missing
-netmask.info
-stamp-h1
-stamp-vti
+src/Makefile.in
 test-driver
 texinfo.tex
-version.texi
-netmask
-aclocal.m4
+
+# misc
+*~

@@ -1,71 +1,73 @@
-netmask (2.4.4) unstable; urgency=low
+2025-07-20  Robert Stone  <talby@trap.mtview.ca.us>
 
-  * harden error logging functions
+	refresh
+	 - modernize autotools usage
+	 - main returns failure on parse errors, fixes #5
+	 - change project type to include INSTALL file, fixes #6
+	 - modernize packaging
+	 - add code coverage reports
+	 - new tests to enhance code coverage
 
- -- Robert Stone <talby@trap.mtview.ca.us>  Thu, 31 Jan 2019 09:26:52 -0800
+2021-09-03  Robert Stone  <rob.stone@whitehatsec.com>
 
-netmask (2.4.3) unstable; urgency=low
+	Merge pull request #8 from a1346054/fixes
+	Minor cleanup
 
-  * repair broken ":+" style range additions for #802884
-  * allow ranges listed from high to low
-  * avoid configure warnings about missing NEWS file
+2021-09-03  a1346054  <36859588+a1346054@users.noreply.github.com>
 
- -- Robert Stone <talby@trap.mtview.ca.us>  Sat, 31 Oct 2015 18:10:52 -0700
+	trim trailing whitespace
 
-netmask (2.4.2) unstable; urgency=low
+	invoke perl using /usr/bin/env
 
-  * adds an "autogen" script to run the auto tools
-  * tidy/update stale docs
-  * clean up several spelling errors
+	use license file from gnu.org
+	File downloaded from:
+	https://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
- -- Robert Stone <talby@trap.mtview.ca.us>  Mon, 28 Sep 2015 12:51:35 -0700
+2019-01-31  Robert Stone  <talby@trap.mtview.ca.us>
 
-netmask (2.4.0) unstable; urgency=low
+	bump version to 2.4.4
+	 * remove checks for negative unsigned ints, fixes #2
+	 * harden error logging functions, fixes #3
 
-  * IPv6 support added.
-  * Bugfix: Cisco style masks assumed more cautiously.
-  * Perform dns lookups less aggressively.
+2015-10-31  Robert Stone  <rob.stone@whitehatsec.com>
 
- -- Robert Stone <talby@trap.mtview.ca.us>  Tue, 19 Feb 2013 14:18:24 -0800
+	bump version to 2.4.3
+	fix for https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=802884 plus
+	more source tidying
 
-netmask (2.3.6) unstable; urgency=low
+2015-09-28  Robert Stone  <rob.stone@whitehatsec.com>
 
-  * Debian policy compliance updates.
+	bump version to 2.4.2
+	applies several cleanups suggested by
+	https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=799615#14
 
- -- Robert Stone <talby@debian.org>  Thu, 03 Apr 2003 13:43:14 -0800
+2015-02-27  Robert Stone  <rob.stone@whitehatsec.com>
 
-netmask (2.3.5) unstable; urgency=low
+	rerun autotools, bump version to 2.4.1
 
-  * Fixed typo in description (closes: #94632)
-  * Add build-dependencies, including texinfo (closes: #111181).
+	adds file handling option, based on work by Matthew Walster.
 
- -- Robert Stone <talby@debian.org>  Thu, 14 Feb 2002 11:08:14 -0800
+2015-02-25  Robert Stone  <rob.stone@whitehatsec.com>
 
-netmask (2.3.4) unstable; urgency=low
+	retool tests (TAP protocol)
 
-  * Bugfix: infodoc install cleanup. (closes: #69210)
-  * Bugfix: circular list state hang.
+2015-02-19  Robert Stone  <talby@trap.mtview.ca.us>
 
- -- Robert Stone <talby@debian.org>  Wed, 30 Aug 2000 13:46:23 -0700
+	Merge pull request #1 from dotwaffle/master
+	Fixing compiler warnings
 
-netmask (2.3.3) unstable frozen; urgency=low
+2015-02-19  Matthew Walster  <matthew@walster.org>
 
-  * Bugfix: dublicate entry addition segfault
+	Including depcomp
+	'./configure && make' failed without this. All I did to generate it was
+	do 'autoreconf -fmi' and then added it to this repo.
 
- -- Robert Stone <talby@debian.org>  Wed,  1 Mar 2000 10:29:28 -0800
+	Initialize a variable, to prevent compiler warnings.
 
-netmask (2.3.2) unstable; urgency=low
+2013-03-16  Robert Stone  <talby@trap.mtview.ca.us>
 
-  * Debian packaging cleanup.
+	upgrade domain during joins if necessary
 
- -- Robert Stone <talby@debian.org>  Fri,  5 Nov 1999 11:18:23 -0800
+	proposal for a new release
 
-netmask (2.3.1) unstable; urgency=low
-
-  * Initial Release.
-
- -- Robert Stone <talby@debian.org>  Mon, 30 Aug 1999 20:36:48 -0700
-
-Local variables:
-mode: debian-changelog
-End:
+	import netmask v2.3.10

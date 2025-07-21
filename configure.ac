@@ -1,6 +1,6 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
-AC_INIT([netmask],[2.4.5])
+AC_INIT([netmask],[2.5.0])
 AC_CONFIG_SRCDIR([netmask.c])
 AC_CONFIG_HEADERS([config.h])
 

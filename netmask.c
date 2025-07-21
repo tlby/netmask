@@ -17,236 +17,59 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
+#include <inttypes.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <arpa/inet.h>
 
 #include "errors.h"
 #include "netmask.h"
+#include "u128.h"
 
-typedef struct {
-    uint64_t h;
-    uint64_t l;
-} u128_t;
-
-static inline u128_t u128_add(u128_t x, u128_t y, int *carry) {
-    /* this relies on the sum being greater than both terms of the
-     * addition, otherwise an overflow must have occurred. */
-    u128_t rv;
-    rv.l = x.l + y.l;
-    if(rv.l < x.l || rv.l < y.l)
-        rv.h = 1;
-    else
-        rv.h = 0;
-    rv.h += x.h + y.h;
-    if(carry) {
-        if(rv.h < x.h || rv.h < y.h)
-            *carry = 1;
-        else
-            *carry = 0;
-    }
-    return rv;
-}
-
-static inline u128_t u128_and(u128_t x, u128_t y) {
-    u128_t rv;
-    rv.h = x.h & y.h;
-    rv.l = x.l & y.l;
-    return rv;
-}
-
-static inline u128_t u128_or(u128_t x, u128_t y) {
-    u128_t rv;
-    rv.h = x.h | y.h;
-    rv.l = x.l | y.l;
-    return rv;
-}
-
-static inline u128_t u128_xor(u128_t x, u128_t y) {
-    u128_t rv;
-    rv.h = x.h ^ y.h;
-    rv.l = x.l ^ y.l;
-    return rv;
-}
-
-static inline u128_t u128_neg(u128_t v) {
-    u128_t rv;
-    rv.h = ~v.h;
-    rv.l = ~v.l;
-    return rv;
-}
-
-static inline u128_t u128_lsh(u128_t v, uint8_t d) {
-    u128_t rv;
-    rv.h = v.h << 1 | v.l >> 63;
-    rv.l = v.l << 1;
-    return rv;
-}
-
-static inline int u128_cmp(u128_t x, u128_t y) {
-    /* return -1, 0, 1 on sort order */
-    if(x.h < y.h)
-        return -1;
-    if(x.h > y.h)
-        return 1;
-    if(x.l < y.l)
-        return -1;
-    if(x.l > y.l)
-        return 1;
-    return 0;
-}
-
-static inline u128_t u128_of_s6(struct in6_addr *s6) {
-    u128_t rv;
-    rv.h = (((uint64_t)s6->s6_addr[0])  << 56) |
-           (((uint64_t)s6->s6_addr[1])  << 48) |
-           (((uint64_t)s6->s6_addr[2])  << 40) |
-           (((uint64_t)s6->s6_addr[3])  << 32) |
-           (((uint64_t)s6->s6_addr[4])  << 24) |
-           (((uint64_t)s6->s6_addr[5])  << 16) |
-           (((uint64_t)s6->s6_addr[6])  <<  8) |
-           (((uint64_t)s6->s6_addr[7])  <<  0);
-    rv.l = (((uint64_t)s6->s6_addr[8])  << 56) |
-           (((uint64_t)s6->s6_addr[9])  << 48) |
-           (((uint64_t)s6->s6_addr[10]) << 40) |
-           (((uint64_t)s6->s6_addr[11]) << 32) |
-           (((uint64_t)s6->s6_addr[12]) << 24) |
-           (((uint64_t)s6->s6_addr[13]) << 16) |
-           (((uint64_t)s6->s6_addr[14]) <<  8) |
-           (((uint64_t)s6->s6_addr[15]) <<  0);
-    return rv;
-}
-static inline struct in6_addr s6_of_u128(u128_t v) {
-    struct in6_addr s6;
-    s6.s6_addr[0]  = 0xff & (v.h >> 56);
-    s6.s6_addr[1]  = 0xff & (v.h >> 48);
-    s6.s6_addr[2]  = 0xff & (v.h >> 40);
-    s6.s6_addr[3]  = 0xff & (v.h >> 32);
-    s6.s6_addr[4]  = 0xff & (v.h >> 24);
-    s6.s6_addr[5]  = 0xff & (v.h >> 16);
-    s6.s6_addr[6]  = 0xff & (v.h >>  8);
-    s6.s6_addr[7]  = 0xff & (v.h >>  0);
-    s6.s6_addr[8]  = 0xff & (v.l >> 56);
-    s6.s6_addr[9]  = 0xff & (v.l >> 48);
-    s6.s6_addr[10] = 0xff & (v.l >> 40);
-    s6.s6_addr[11] = 0xff & (v.l >> 32);
-    s6.s6_addr[12] = 0xff & (v.l >> 24);
-    s6.s6_addr[13] = 0xff & (v.l >> 16);
-    s6.s6_addr[14] = 0xff & (v.l >>  8);
-    s6.s6_addr[15] = 0xff & (v.l >>  0);
-    return s6;
-}
-
-static inline u128_t u128_lit(uint64_t h, uint64_t l) {
-    u128_t rv;
-    rv.h = h;
-    rv.l = l;
-    return rv;
-}
-
-static inline u128_t u128_cidr(uint8_t n) {
-    u128_t rv;
-    if(n <= 0) {
-        rv.h = 0;
-        rv.l = 0;
-    } else if(n <= 64) {
-        rv.h = ~0ULL << (64 - n);
-        rv.l = 0;
-    } else if(n <= 128) {
-        rv.h = ~0ULL;
-        rv.l = ~0ULL << (128 - n);
-    } else {
-        rv.h = ~0ULL;
-        rv.l = ~0ULL;
-    }
-    return rv;
-}
-static inline int cidr(u128_t u) {
-    uint64_t v;
-    int n = 0;
-    for(v = u.l; v > 0; v <<= 1) n++;
-    for(v = u.h; v > 0; v <<= 1) n++;
-    return n;
-}
-
-static inline int chkmask(u128_t v) {
-    /* this is sort of specialized */
-    int i;
-    u128_t m = u128_lit(~0ULL, ~0ULL);
-
-    for(i = 0; i < 129; i++) {
-        if(u128_cmp(v, m) == 0)
-            return 1;
-        m = u128_lsh(m, 1);
-    }
-    return 0;
-}
+#define PRIx128 "%016" PRIx64 "%016" PRIx64
+#define PRMu128(x) (x).h, (x).l
 
 struct nm {
     u128_t neta;
-    u128_t mask;
+    uint8_t len;
     int domain;
-    NM next;
+    NM l, r;
 };
 
-NM nm_new_v4(struct in_addr *s) {
-    NM self;
-    union {
-      struct in6_addr s6;
-      uint32_t u32[4];
-    } v;
-
-    v.u32[0] = 0;
-    v.u32[1] = 0;
-    v.u32[2] = htonl(0x0000ffff);
-    v.u32[3] = s->s_addr;
-    self = nm_new_v6(&v.s6);
-    self->domain = AF_INET;
+NM nm_new_u128(u128_t neta, uint8_t len, uint8_t domain) {
+    if (len > 128) return NULL;
+    NM self = (NM)calloc(1, sizeof(struct nm));
+    self->neta = u128_and(neta, u128_mask(len));
+    self->len = len;
+    self->domain = domain;
     return self;
+}
+
+NM nm_new_v4(struct in_addr *s) {
+    return nm_new_u128(u128_of_v4(s), 128, AF_INET);
 }
 
 NM nm_new_v6(struct in6_addr *s6) {
-    NM self = (NM)malloc(sizeof(struct nm));
-    self->neta = u128_of_s6(s6);
-    self->mask = u128_cidr(128);
-    self->domain = AF_INET6;
-    self->next = (NM)0;
-    return self;
-}
-
-/* is "a" a subset of "b"? */
-static inline int subset_of(NM a, NM b) {
-    return(
-        u128_cmp(a->mask, b->mask) >= 0 &&
-        u128_cmp(b->neta, u128_and(a->neta, b->mask)) == 0
-    );
-}
-/* are "a" and "b" a joinable pair? */
-static inline int joinable_pair(NM a, NM b) {
-    return(
-        /* nets have the same mask */
-        u128_cmp(a->mask, b->mask) == 0 &&
-        /* but are distinct */
-        u128_cmp(a->neta, b->neta) != 0 &&
-        /* and would both be subsets of the same mask << 1 */
-        u128_cmp(u128_lit(0, 0), u128_and(
-            u128_xor(a->neta, b->neta),
-            u128_lsh(a->mask, 1)
-        )) == 0
-    );
+    return nm_new_u128(u128_of_v6(s6), 128, AF_INET6);
 }
 
 /* this is slightly complicated because an NM can outgrow it's initial
  * v4 state, but if it doesn't, we want to retain the fact that it
  * was and remained v4.  */
 static inline int is_v4(NM self) {
-    struct nm v4map;
+    return self->domain == AF_INET && 0 == u128_cmp(
+        u128(0, 0x0000ffff00000000ULL),
+        u128_and(self->neta, u128_mask(96))
+    );
+}
 
-    v4map.neta = u128_lit(0, 0x0000ffff00000000ULL);
-    v4map.mask = u128_cidr(96);
+static inline int is_leaf(NM self) {
+    return !self->l && !self->r;
+}
 
-    return(self->domain == AF_INET && subset_of(self, &v4map));
+static inline int domain_merge(NM a, NM b) {
+    return a->domain == AF_INET && b->domain == AF_INET ? AF_INET : AF_INET6;
 }
 
 NM nm_new_ai(struct addrinfo *ai) {
@@ -302,104 +125,66 @@ static inline int parse_mask(NM self, const char *str, int flags) {
     uint32_t v;
     struct in6_addr s6;
     struct in_addr s;
+    u128_t mask;
 
     v = strtoul(str, &p, 0);
     if(*p == '\0') {
-        /* read it as a CIDR value */
-        if(is_v4(self)) {
-            if(v > 32) return 0;
-            v += 96;
-        } else {
-            if(v > 128) return 0;
-        }
-        self->mask = u128_cidr(v);
-    } else if(inet_pton(AF_INET6, str, &s6)) {
-        self->mask = u128_of_s6(&s6);
+        /* read it as a CIDR scope */
+        if(is_v4(self)) v += 96;
+        if(v > 128) return 0;
+        mask = u128_mask(v);
+        self->len = v;
+    } else if(self->domain == AF_INET6 && inet_pton(AF_INET6, str, &s6)) {
+        mask = u128_of_v6(&s6);
         /* flip cisco style masks */
-        if(u128_cmp(
-            u128_lit(0, 0),
-            u128_and(
-                u128_lit(1ULL << 63, 1),
-                u128_xor(u128_lit(0, 1), self->mask)
-            )
-        ) == 0) {
-            self->mask = u128_neg(self->mask);
-        }
-        self->domain = AF_INET6;
+        if (!(s6.s6_addr[0] & 0x80) && s6.s6_addr[15] & 1)
+            mask = u128_not(mask);
+        self->len = u128_popc(mask);
     } else if(self->domain == AF_INET && inet_aton(str, &s)) {
         v = htonl(s.s_addr);
         if(v & 1 && ~v >> 31) /* flip cisco style masks */
             v = ~v;
-        /* since mask is currently all 1s, mask ^ ~m will
-         * set the low 32. */
-        self->mask = u128_xor(self->mask, u128_lit(0, ~v));
+        mask = u128(~0ULL, 0xffffffff00000000ULL | v);
+        self->len = u128_popc(mask);
     } else {
         return 0;
     }
-    if(!chkmask(self->mask))
-        return 0;
+    if(!u128_is_valid_mask(mask)) return 0;
     /* apply mask to neta */
-    self->neta = u128_and(self->neta, self->mask);
+    self->neta = u128_and(self->neta, mask);
     return 1;
 }
 
-/* widen the mask as much as possible without including addresses below
- * neta or above max.  return one if more ranges are needed to complete
- * the span or zero if this nm includes max. */
-static inline int nm_widen(NM self, u128_t max, u128_t *last) {
-    u128_t mask, neta, bcst;
-    int cmp = u128_cmp(self->neta, max);
-
-    while(cmp < 0) {
-        /* attempt widening by one bit */
-        mask = u128_lsh(self->mask, 1);
-        neta = u128_and(self->neta, mask);
-        bcst = u128_or(self->neta, u128_neg(mask));
-        /* check ranges */
-        if(u128_cmp(neta, self->neta) < 0)
-            break;
-        cmp = u128_cmp(bcst, max);
-        if(cmp > 0)
-            break;
-        /* successful attempt */
-        self->mask = mask;
-        *last = bcst;
-        status("widen %016llx %016llx/%d", self->neta.h, self->neta.l, cidr(self->mask));
-        if(cmp == 0)
-            break;
+/* turn a pair into a range (inclusive), both of these should be
+ * freshly created leaf nodes */
+static inline NM nm_seq(NM min, NM max) {
+    if (u128_cmp(min->neta, max->neta) > 0) {
+        NM tmp = max;
+        max = min;
+        min = tmp;
     }
-    return cmp;
-}
+    int domain = domain_merge(min, max);
+    NM rv = NULL;
 
-static inline void nm_order(NM *low, NM *high) {
-    if(u128_cmp((*low)->neta, (*high)->neta) > 0) {
-        NM tmp = *low;
-        *low = *high;
-        *high = tmp;
+    u128_t cur = min->neta;
+    u128_t one = u128(0, 1);
+    while (u128_cmp(cur, max->neta) <= 0) {
+        uint8_t len = 128;
+        while (len > 0) {
+            u128_t mask = u128_mask(len - 1);
+            u128_t lo = u128_and(cur, mask);
+            if (u128_cmp(min->neta, lo) > 0) break;
+            u128_t hi = u128_or(cur, u128_not(mask));
+            if (u128_cmp(hi, max->neta) > 0) break;
+            len--;
+        }
+        rv = nm_merge(rv, nm_new_u128(cur, len, domain));
+        u128_t hi = u128_or(cur, u128_not(u128_mask(len)));
+        cur = u128_add(hi, one, NULL);
     }
-}
-
-/* convert first and last into a list from first to last.  (both these
- * should be single addresses, not lists.) */
-static inline NM nm_seq(NM first, NM last) {
-    /* if first is higher than last, swap them (legacy) */
-    nm_order(&first, &last);
-    NM cur = first;
-    u128_t pos = cur->neta;
-    u128_t one = u128_lit(0, 1);
-    u128_t max = last->neta;
-    int domain = is_v4(first) && is_v4(last) ? AF_INET : AF_INET6;
-
-    free(last);
-    while(nm_widen(cur, max, &pos)) {
-        cur->next = (NM)malloc(sizeof(struct nm));
-        cur = cur->next;
-        cur->neta = u128_add(pos, one, NULL);
-        cur->mask = u128_cidr(128);
-        cur->domain = domain;
-        cur->next = NULL;
-    }
-    return first;
+    free(min);
+    free(max);
+    return rv;
 }
 
 NM nm_new_str(const char *str, int flags) {
@@ -504,90 +289,184 @@ NM nm_new_str(const char *str, int flags) {
     }
 }
 
-NM nm_merge(NM dst, NM src) {
-    /* both lists are ordered and non-overlapping.  Knit them into a
-     * single ordered, non-overlapping list.  */
-    NM tmp;
-    NM *pos = &dst; /* double indirect pointer simplifies list insertion
-                       logic. */
-    while(src) {
-        if(*pos == NULL) {
-            /* remains of src go to tail of dst */
-            tmp = src;
-            src = *pos;
-            *pos = tmp;
-        } else if(subset_of(src, *pos)) {
-            status("found %016llx %016llx/%d a subset of %016llx %016llx/%d", src->neta.h, src->neta.l, cidr(src->mask), (*pos)->neta.h, (*pos)->neta.l, cidr((*pos)->mask));
-            /* drop src elt on the floor */
-            if(src->domain != AF_INET) /* may need to promote domain */
-                (*pos)->domain = src->domain;
-            tmp = src;
-            src = src->next;
-            free(tmp);
-        } else if(subset_of(*pos, src)) {
-            /* src seems larger, merge the other direction instead */
-            tmp = src;
-            src = *pos;
-            *pos = tmp;
-        } else if(joinable_pair(src, *pos)) {
-            status("joinable %016llx %016llx/%d and %016llx %016llx/%d", src->neta.h, src->neta.l, cidr(src->mask), (*pos)->neta.h, (*pos)->neta.l, cidr((*pos)->mask));
-            /* pull the dst elt */
-            tmp = *pos;
-            *pos = (*pos)->next;
-            if(src->domain == AF_INET)
-                src->domain = tmp->domain;
-            free(tmp);
-            /* widen the src elt */
-            src->mask = u128_lsh(src->mask, 1);
-            src->neta = u128_and(src->neta, src->mask);
-            /* and merge it back into the src tail */
-            tmp = src->next;
-            src->next = NULL;
-            src = nm_merge(src, tmp);
-            /* now the dst scan needs to start over to find preceding
-             * join candidates. */
-            pos = &dst;
-            /* TODO: there should be a cheaper way to do this than an
-             * effective double recursion, but the possibility of joins
-             * cascading backwards makes this difficult */
-        } else if(u128_cmp(src->neta, (*pos)->neta) < 0) {
-            /* src elt goes here in dst list.  if top src elt were
-             * spliced into dst, it may duplicate later elts in dst.
-             * swap tails instead because src is well formed. */
-            tmp = src;
-            src = *pos;
-            *pos = tmp;
-        } else {
-            /* move down the dst list */
-            pos = &(*pos)->next;
-        }
-    }
-    return dst;
+void nm_free(NM self) {
+    if (self->l) nm_free(self->l);
+    if (self->r) nm_free(self->r);
+    free(self);
 }
 
-void nm_walk(NM self, void (*cb)(int, nm_addr *, nm_addr *)) {
-    int domain;
-    nm_addr neta, mask;
+typedef struct merge_ctx {
+  NM (*call)(struct merge_ctx *, NM, NM);
+} *merge_ctx;
 
-    while(self) {
-        neta.s6 = s6_of_u128(self->neta);
-        mask.s6 = s6_of_u128(self->mask);
-        if(is_v4(self)) {
-            domain = AF_INET;
-            neta.s.s_addr = htonl(
-                    neta.s6.s6_addr[12] << 24 |
-                    neta.s6.s6_addr[13] << 16 |
-                    neta.s6.s6_addr[14] <<  8 |
-                    neta.s6.s6_addr[15] <<  0);
-            mask.s.s_addr = htonl(
-                    mask.s6.s6_addr[12] << 24 |
-                    mask.s6.s6_addr[13] << 16 |
-                    mask.s6.s6_addr[14] <<  8 |
-                    mask.s6.s6_addr[15] <<  0);
-        } else {
-            domain = AF_INET6;
-        }
-        cb(domain, &neta, &mask);
-        self = self->next;
+static inline NM merge_split(merge_ctx ctx, NM a, NM b, uint8_t len) {
+    NM c = nm_new_u128(a->neta, len, domain_merge(a, b));
+    if(u128_bit(b->neta, len)) {
+        c->l = a;
+        c->r = b;
+    } else {
+        c->l = b;
+        c->r = a;
     }
+    return c;
+}
+
+static inline NM merge_child(merge_ctx ctx, NM a, NM b) {
+    if (is_leaf(a))
+        nm_free(b);
+    else if (u128_bit(b->neta, a->len))
+        a->r = ctx->call(ctx, a->r, b);
+    else
+        a->l = ctx->call(ctx, a->l, b);
+    return a;
+}
+
+static inline NM merge_pivot(merge_ctx ctx, NM a, NM b) {
+    return merge_child(ctx, b, a);
+}
+
+static inline NM merge_merge(merge_ctx ctx, NM a, NM b) {
+    if (is_leaf(a)) {
+        nm_free(b);
+        return a;
+    }
+    if (is_leaf(b)) {
+        nm_free(a);
+        return b;
+    }
+    a->domain = domain_merge(a, b);
+    a->l = ctx->call(ctx, a->l, b->l);
+    a->r = ctx->call(ctx, a->r, b->r);
+    free(b);
+    return a;
+}
+
+static inline NM merge_step(merge_ctx ctx, NM a, NM b) {
+    if (!a) return b;
+    if (!b) return a;
+    NM c;
+    uint8_t len = u128_lcp(a->neta, b->neta);
+    if (len < a->len && len < b->len)
+        c = merge_split(ctx, a, b, len);
+    else if (a->len < b->len)
+        c = merge_child(ctx, a, b);
+    else if (b->len < a->len)
+        c = merge_pivot(ctx, a, b);
+    else /* if (a->len == b->len) */
+        c = merge_merge(ctx, a, b);
+    /* check for aggregates */
+    if (c->l && is_leaf(c->l) && c->l->len == c->len + 1 &&
+        c->r && is_leaf(c->r) && c->r->len == c->len + 1) {
+        free(c->l);
+        free(c->r);
+        c->l = NULL;
+        c->r = NULL;
+    }
+    return c;
+}
+
+NM nm_merge(NM a, NM b) {
+    struct merge_ctx ctx = { .call = merge_step };
+    return ctx.call(&ctx, a, b);
+}
+
+/* LCOV_EXCL_START - debug mode is not currently tested */
+static inline int nm_coherent(NM self) {
+    /* validate that children belong under the parent */
+    u128_t mask = u128_mask(self->len);
+    if (self->l) {
+        if (self->len >= self->l->len) return 0;
+        if (u128_cmp(u128_and(self->l->neta, mask), self->neta)) return 0;
+    }
+    if (self->r) {
+        if (self->len >= self->r->len) return 0;
+        if (u128_cmp(u128_and(self->r->neta, mask), self->neta)) return 0;
+    }
+    return 1;
+}
+
+static inline NM merge_check(merge_ctx ctx, NM a, NM b) {
+    /* capture the input trees */
+    char lineA[1024], lineB[1024];
+    if (a)
+        sprintf(lineA, "a=" PRIx128 "/%d", PRMu128(a->neta), a->len);
+    else
+        sprintf(lineA, "a=%p", a);
+    if (b)
+        sprintf(lineA, "b=" PRIx128 "/%d", PRMu128(b->neta), b->len);
+    else
+        sprintf(lineB, "b=%p", b);
+    NM c = merge_step(ctx, a, b);
+    /* if anything has been corrupted, spill inputs & outputs */
+    if (!c || !nm_coherent(c)) {
+        status("%s", lineA);
+        status("%s", lineB);
+        if (c) {
+            status("c=" PRIx128 "/%d", PRMu128(c->neta), c->len);
+            if (c->l) status("l=" PRIx128 "/%d %d", PRMu128(c->l->neta), c->l->len, u128_bit(c->l->neta, c->len));
+            else status("l=%p", c->l);
+            if (c->r) status("r=" PRIx128 "/%d %d", PRMu128(c->r->neta), c->r->len, u128_bit(c->r->neta, c->len));
+            else status("r=%p", c->r);
+        } else {
+            status("c=%p", c);
+        }
+        abort();
+    }
+    return c;
+}
+
+NM nm_merge_strict(NM a, NM b) {
+    struct merge_ctx ctx = { .call = merge_check };
+    return ctx.call(&ctx, a, b);
+}
+
+/* This needs some explaining.  We are building a tree using box drawing
+ * characters.  Each column is a level of the tree. */
+static const char *nm_dump_sp = " "; /* before left and after right child */
+static const char *nm_dump_br = "│"; /* between left and right child */
+static const char *nm_dump_lc = "┌"; /* at left child */
+static const char *nm_dump_pr = "┤"; /* at parent */
+static const char *nm_dump_rc = "└"; /* at right child */
+static const char *nm_dump_lf = "╴"; /* at leaf node */
+/* Since this is a patricia tree, we only ever have 2 or 0 children so
+ * no need to draw "┐" or "┘". */
+
+static inline void nm_dump_print(NM nm, const char *pre[], size_t len) {
+    char line[168], *p = line, ls[4];
+    for(size_t i = 0; i < len; i++) p = stpcpy(p, pre[i]);
+    p = stpcpy(p, is_leaf(nm) ? nm_dump_lf : nm_dump_pr);
+    snprintf(ls, 4, "%-3d", nm->len);
+    status(PRIx128 "/%s %s", PRMu128(nm->neta), ls, line);
+}
+
+static inline void nm_dump_node(NM nm, const char *pre[], size_t len) {
+    pre[len + 1] = nm_dump_sp;
+    if (nm->l) nm_dump_node(nm->l, pre, len + 1);
+    pre[len] = pre[len] == nm_dump_sp ? nm_dump_lc : nm_dump_rc;
+    nm_dump_print(nm, pre, len + 1);
+    pre[len] = pre[len] == nm_dump_lc ? nm_dump_br : nm_dump_sp;
+    if (nm->r) nm_dump_node(nm->r, pre, len + 1);
+}
+
+void nm_dump(NM nm) {
+    const char *pre[129] = { nm_dump_sp };
+    if (nm->l) nm_dump_node(nm->l, pre, 0);
+    nm_dump_print(nm, pre, 0);
+    if (nm->r) nm_dump_node(nm->r, pre, 0);
+}
+/* LCOV_EXCL_STOP */
+
+void nm_walk(NM self, nm_walk_cb cb, void *user) {
+    if (!self) return;
+    nm_walk(self->l, cb, user);
+    if (is_leaf(self)) {
+        nm_cidr cidr = {
+            .domain = is_v4(self) ? AF_INET : AF_INET6,
+            .addr = { .s6 = v6_of_u128(self->neta) },
+            .mask = { .s6 = v6_of_u128(u128_mask(self->len)) },
+            .scope = self->len,
+        };
+        cb(&cidr, user);
+    }
+    nm_walk(self->r, cb, user);
 }

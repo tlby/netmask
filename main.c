@@ -34,13 +34,6 @@
 #include "errors.h"
 #include "config.h"
 
-struct addrmask {
-  u_int32_t neta;
-  u_int32_t mask;
-  struct addrmask *next;
-  struct addrmask *prev;
-};
-
 struct option longopts[] = {
   { "version",	0, 0, 'v' },
   { "help",	0, 0, 'h' },
@@ -64,49 +57,39 @@ typedef enum {
 } output_t;
 
 char version[] = "netmask, version "VERSION;
-char vversion[] = __DATE__" "__TIME__;
 char usage[] = "Try `%s --help' for more information.\n";
 char *progname = NULL;
 
-void disp_std(int domain, nm_addr *n, nm_addr *m) {
+static void nm_ntop(int domain, nm_addr *addr, char *dst) {
+    void *src = domain == AF_INET ? (void *)&addr->s : (void *)&addr->s6;
+    inet_ntop(domain, src, dst, INET6_ADDRSTRLEN);
+}
+
+void disp_std(nm_cidr *c, void *user) {
   char nb[INET6_ADDRSTRLEN + 1],
        mb[INET6_ADDRSTRLEN + 1];
 
-  inet_ntop(domain, n, nb, INET6_ADDRSTRLEN);
-  inet_ntop(domain, m, mb, INET6_ADDRSTRLEN);
+  nm_ntop(c->domain, &c->addr, nb);
+  nm_ntop(c->domain, &c->mask, mb);
   printf("%15s/%-15s\n", nb, mb);
 }
-static void disp_cidr(int domain, nm_addr *n, nm_addr *m) {
-  char nb[INET6_ADDRSTRLEN + 1];
-  int cidr = 0;
 
-  inet_ntop(domain, n, nb, INET6_ADDRSTRLEN);
-  if(domain == AF_INET) {
-    uint32_t mask;
-    for(mask = ntohl(m->s.s_addr); mask; mask <<= 1)
-      cidr++;
-  } else {
-      uint8_t i, c;
-      for(i = 0; i < 16; i++)
-          for(c = m->s6.s6_addr[i]; c; c <<= 1)
-              cidr++;
-  }
-  printf("%15s/%d\n", nb, cidr);
+static void disp_cidr(nm_cidr *c, void *user) {
+  char nb[INET6_ADDRSTRLEN + 1];
+
+  nm_ntop(c->domain, &c->addr, nb);
+  int scope = c->scope - (c->domain == AF_INET ? 96 : 0);
+  printf("%15s/%d\n", nb, scope);
 }
 
-static void disp_cisco(int domain, nm_addr *n, nm_addr *m) {
+static void disp_cisco(nm_cidr *c, void *user) {
   char nb[INET6_ADDRSTRLEN + 1],
        mb[INET6_ADDRSTRLEN + 1];
   int i;
 
-  if(domain == AF_INET6)
-    for(i = 0; i < 16; i++)
-      m->s6.s6_addr[i] = ~m->s6.s6_addr[i];
-  else
-      m->s.s_addr = ~m->s.s_addr;
-
-  inet_ntop(domain, n, nb, INET6_ADDRSTRLEN);
-  inet_ntop(domain, m, mb, INET6_ADDRSTRLEN);
+  for(i = 0; i < 16; i++) c->mask.s6.s6_addr[i] = ~c->mask.s6.s6_addr[i];
+  nm_ntop(c->domain, &c->addr, nb);
+  nm_ntop(c->domain, &c->mask, mb);
   printf("%15s %-15s\n", nb, mb);
 }
 
@@ -147,118 +130,89 @@ static void range_num(char *dst, uint8_t *src) {
     *dst++ = '\0';
 }
 
-static void disp_range(int domain, nm_addr *n, nm_addr *m) {
+static void disp_range(nm_cidr *c, void *user) {
   char nb[INET6_ADDRSTRLEN + 1],
        mb[INET6_ADDRSTRLEN + 1],
        ns[42];
-  uint64_t over = 1;
   uint8_t ra[17] = { 0 };
   int i;
 
-  if(domain == AF_INET6) {
-    for(i = 15; i >= 0; i--) {
-      m->s6.s6_addr[i] = ~m->s6.s6_addr[i];
-      over += m->s6.s6_addr[i];
-      m->s6.s6_addr[i] |= n->s6.s6_addr[i];
-      ra[i + 1] = over & 0xff;
-      over >>= 8;
-    }
-    ra[0] = over;
-  } else {
-    over += htonl(~m->s.s_addr);
-    for(i = 16; i > 11; i--) {
-      ra[i] = over & 0xff;
-      over >>= 8;
-    }
-    m->s.s_addr = n->s.s_addr | ~m->s.s_addr;
+  /* tiny bit of infinite precision addition */
+  int carry = 1;
+  for(i = 16; i > 0; i--) {
+    int x = 0xff & ~c->mask.s6.s6_addr[i - 1];
+    carry += x;
+    ra[i] = 0xff & carry;
+    carry >>= 8;
+    /* also convert mask to broadcast address */
+    c->mask.s6.s6_addr[i - 1] = c->addr.s6.s6_addr[i - 1] | x;
   }
+  ra[0] = carry;
   range_num(ns, ra);
-  inet_ntop(domain, n, nb, INET6_ADDRSTRLEN);
-  inet_ntop(domain, m, mb, INET6_ADDRSTRLEN);
+  nm_ntop(c->domain, &c->addr, nb);
+  nm_ntop(c->domain, &c->mask, mb);
   printf("%15s-%-15s (%s)\n", nb, mb, ns);
 }
 
-static void disp_hex(int domain, nm_addr *n, nm_addr *m) {
-  if(domain == AF_INET) {
-    printf("0x%08x/0x%08x\n", htonl(n->s.s_addr), htonl(m->s.s_addr));
-  } else {
-    printf("0x%02x%02x%02x%02x%02x%02x%02x%02x"
-             "%02x%02x%02x%02x%02x%02x%02x%02x/"
-           "0x%02x%02x%02x%02x%02x%02x%02x%02x"
-             "%02x%02x%02x%02x%02x%02x%02x%02x\n",
-      n->s6.s6_addr[0],  n->s6.s6_addr[1],  n->s6.s6_addr[2],  n->s6.s6_addr[3],
-      n->s6.s6_addr[4],  n->s6.s6_addr[5],  n->s6.s6_addr[6],  n->s6.s6_addr[7],
-      n->s6.s6_addr[8],  n->s6.s6_addr[9],  n->s6.s6_addr[10], n->s6.s6_addr[11],
-      n->s6.s6_addr[12], n->s6.s6_addr[13], n->s6.s6_addr[14], n->s6.s6_addr[15],
-
-      m->s6.s6_addr[0],  m->s6.s6_addr[1],  m->s6.s6_addr[2],  m->s6.s6_addr[3],
-      m->s6.s6_addr[4],  m->s6.s6_addr[5],  m->s6.s6_addr[6],  m->s6.s6_addr[7],
-      m->s6.s6_addr[8],  m->s6.s6_addr[9],  m->s6.s6_addr[10], m->s6.s6_addr[11],
-      m->s6.s6_addr[12], m->s6.s6_addr[13], m->s6.s6_addr[14], m->s6.s6_addr[15]);
-  }
-}
-
-static void disp_octal(int domain, nm_addr *n, nm_addr *m) {
-  if(domain == AF_INET) {
-    printf("0%10o/0%10o\n", htonl(n->s.s_addr), htonl(m->s.s_addr));
-  } else {
-    printf("0%03x%03x%03x%03x%03x%03x%03x%03x"
-            "%03x%03x%03x%03x%03x%03x%03x%03x/"
-           "0%03x%03x%03x%03x%03x%03x%03x%03x"
-            "%03x%03x%03x%03x%03x%03x%03x%03x\n",
-      n->s6.s6_addr[0],  n->s6.s6_addr[1],  n->s6.s6_addr[2],  n->s6.s6_addr[3],
-      n->s6.s6_addr[4],  n->s6.s6_addr[5],  n->s6.s6_addr[6],  n->s6.s6_addr[7],
-      n->s6.s6_addr[8],  n->s6.s6_addr[9],  n->s6.s6_addr[10], n->s6.s6_addr[11],
-      n->s6.s6_addr[12], n->s6.s6_addr[13], n->s6.s6_addr[14], n->s6.s6_addr[15],
-
-      m->s6.s6_addr[0],  m->s6.s6_addr[1],  m->s6.s6_addr[2],  m->s6.s6_addr[3],
-      m->s6.s6_addr[4],  m->s6.s6_addr[5],  m->s6.s6_addr[6],  m->s6.s6_addr[7],
-      m->s6.s6_addr[8],  m->s6.s6_addr[9],  m->s6.s6_addr[10], m->s6.s6_addr[11],
-      m->s6.s6_addr[12], m->s6.s6_addr[13], m->s6.s6_addr[14], m->s6.s6_addr[15]);
-  }
-}
-
-static void bin_str(char *dst, uint8_t *src, int len) {
-  int i;
-  int j;
-  for(i = 0; i < len; i++) {
-    for(j = 7; j >= 0; j--) {
-      *dst++ = src[i] & (1 << j) ? '1' : '0';
+static void num_str(char *dst, uint8_t *src, size_t len, size_t bs) {
+  /* caller must allocate ceil(len * 8 / bs + 1) bytes in dst.
+   * This is kind of like rebuffering from one block size to another,
+   * but with bits, only snag is it needs to be left bit aligned */
+  static const char chrs[] = "0123456789abcdef";
+  if(bs > 0 && bs <= 4) {
+    unsigned int pend = 0, mask = (1 << bs) - 1;
+    size_t have = (bs - ((8 * len) % bs)) % bs;
+    for(size_t i = 0; i < len; i++) {
+      pend = (pend << 8) | src[i];
+      have += 8;
+      while (have >= bs) {
+        *dst++  = chrs[(pend >> (have - bs)) & mask];
+        have -= bs;
+      }
     }
-    *dst++ = ' ';
   }
-  /* replace the last space with a string terminator */
-  dst[-1] = '\0';
+  *dst = '\0';
 }
 
-static void disp_binary(int domain, nm_addr *n, nm_addr *m) {
-  char ns[144],
-       ms[144];
-  uint8_t bits[16];
+static void disp_hex(nm_cidr *c, void *user) {
+  char ns[16 * 2 + 1],
+       ms[16 * 2 + 1];
+  int off = c->domain == AF_INET ? 12 : 0,
+      len = c->domain == AF_INET ? 4 : 16;
+  num_str(ns, c->addr.s6.s6_addr + off, len, 4);
+  num_str(ms, c->mask.s6.s6_addr + off, len, 4);
+  printf("0x%s/0x%s\n", ns, ms);
+}
 
-  if(domain == AF_INET) {
-      unsigned long l;
-      l = htonl(n->s.s_addr);
-      bits[0] = 0xff & (l >> 24);
-      bits[1] = 0xff & (l >> 16);
-      bits[2] = 0xff & (l >>  8);
-      bits[3] = 0xff & (l >>  0);
-      bin_str(ns, bits, 4);
-      l = htonl(m->s.s_addr);
-      bits[0] = 0xff & (l >> 24);
-      bits[1] = 0xff & (l >> 16);
-      bits[2] = 0xff & (l >>  8);
-      bits[3] = 0xff & (l >>  0);
-      bin_str(ms, bits, 4);
-  } else {
-      bin_str(ns, n->s6.s6_addr, 16);
-      bin_str(ms, m->s6.s6_addr, 16);
+static void disp_octal(nm_cidr *c, void *user) {
+  char ns[16 * 3 + 1],
+       ms[16 * 3 + 1];
+  int off = c->domain == AF_INET ? 12 : 0,
+      len = c->domain == AF_INET ? 4 : 16;
+  num_str(ns, c->addr.s6.s6_addr + off, len, 3);
+  num_str(ms, c->mask.s6.s6_addr + off, len, 3);
+  printf("0%s/0%s\n", ns, ms);
+}
+
+static void disp_binary(nm_cidr *c, void *user) {
+  char ns[16 * 9 + 1],
+       ms[16 * 9 + 1];
+  int off = c->domain == AF_INET ? 12 : 0,
+      len = c->domain == AF_INET ? 4 : 16;
+  /* have num_str() each byte to add spaces between */
+  for(int i = 0; i < len; i++) {
+    num_str(ns + 9 * i, c->addr.s6.s6_addr + off + i, 1, 1);
+    ns[9 * (i + 1) - 1] = ' ';
+    num_str(ms + 9 * i, c->mask.s6.s6_addr + off + i, 1, 1);
+    ms[9 * (i + 1)  - 1] = ' ';
   }
+  ns[9 * len - 1] = '\0';
+  ms[9 * len - 1] = '\0';
   printf("%s / %s\n", ns, ms);
 }
 
 void display(NM nm, output_t style) {
-  void (*disp)(int, nm_addr *, nm_addr *) = NULL;
+  nm_walk_cb disp = NULL;
 
   switch(style) {
     case OUT_STD:    disp = &disp_std;    break;
@@ -270,7 +224,7 @@ void display(NM nm, output_t style) {
     case OUT_BINARY: disp = &disp_binary; break;
     default: return;
   }
-  nm_walk(nm, disp);
+  nm_walk(nm, disp, NULL);
 }
 
 static inline int add_entry(NM *nm, const char *str, int dns) {
@@ -285,8 +239,7 @@ static inline int add_entry(NM *nm, const char *str, int dns) {
 }
 
 int main(int argc, char *argv[]) {
-  int optc, h = 0, v = 0, f = 0, dns = NM_USE_DNS, lose = 0, rv = 0;
-//  u_int32_t min = ~0, max = 0;
+  int optc, h = 0, v = 0, f = 0, d = 0, dns = NM_USE_DNS, lose = 0, rv = 0;
   output_t output = OUT_CIDR;
 
   progname = argv[0];
@@ -300,6 +253,7 @@ int main(int argc, char *argv[]) {
 //   case 'M': max = mspectou32(optarg); break;
 //   case 'm': min = mspectou32(optarg); break;
    case 'd':
+    d = 1;
     initerrors(NULL, -1, 1); /* showstatus */
     break;
    case 's': output = OUT_STD;    break;
@@ -312,8 +266,7 @@ int main(int argc, char *argv[]) {
    default: lose = 1; break;
   }
   if(v) {
-    if(v == 1) fprintf(stderr, "%s\n", version);
-    else fprintf(stderr, "%s, %s\n", version, vversion);
+    fprintf(stderr, "%s\n", version);
     if(!h) exit(0);
   }
   if(h) {
@@ -370,5 +323,6 @@ int main(int argc, char *argv[]) {
       rv |= add_entry(&nm, argv[optind], dns);
   }
   display(nm, output);
+  if(d) nm_dump(nm);
   return(rv);
 }

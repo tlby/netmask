@@ -13,11 +13,34 @@ NM nm_new_ai(struct addrinfo *);
 
 NM nm_new_str(const char *, int flags);
 
+/* nm_merge() returns the union of the two trees passed in.  it is
+ * destructive recycling branches from both sides and freeing unneeded
+ * fragments. */
 NM nm_merge(NM, NM);
+
+/* adds a validation step between each merge operation, but is somewhat
+ * expensive so only enabled in debug mode */
+NM nm_merge_strict(NM, NM);
 
 typedef union {
     struct in6_addr s6;
-    struct in_addr  s;
+    struct {
+        char _pad[12];
+        struct in_addr s;
+    };
 } nm_addr;
 
-void nm_walk(NM, void (*)(int domain, nm_addr *neta, nm_addr *mask));
+typedef struct {
+    int domain;
+    nm_addr addr, mask;
+    uint8_t scope;
+} nm_cidr;
+
+/* the void* is caller data */
+typedef void (*nm_walk_cb)(nm_cidr *,void *p);
+
+void nm_walk(NM, nm_walk_cb, void *p);
+
+void nm_free(NM);
+
+void nm_dump(NM);

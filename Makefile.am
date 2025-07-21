@@ -1,6 +1,6 @@
 AM_CFLAGS = -Wall
 bin_PROGRAMS = netmask
-netmask_SOURCES = main.c netmask.c netmask.h errors.c errors.h
+netmask_SOURCES = main.c netmask.c netmask.h errors.c errors.h u128.h
 netmask_CPPFLAGS = $(CHECK_CPPFLAGS) $(CODE_COVERAGE_CPPFLAGS)
 netmask_CFLAGS = $(AM_CFLAGS) $(CHECK_CFLAGS) $(CODE_COVERAGE_CFLAGS)
 netmask_LDADD = $(CHECK_LIBS) $(CODE_COVERAGE_LIBS)

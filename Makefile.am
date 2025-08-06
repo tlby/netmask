@@ -5,7 +5,6 @@ netmask_CPPFLAGS = $(CHECK_CPPFLAGS) $(CODE_COVERAGE_CPPFLAGS)
 netmask_CFLAGS = $(AM_CFLAGS) $(CHECK_CFLAGS) $(CODE_COVERAGE_CFLAGS)
 netmask_LDADD = $(CHECK_LIBS) $(CODE_COVERAGE_LIBS)
 
-check_PROGRAMS = nm_test
 nm_test_SOURCES = nm_test.c netmask.c netmask.h errors.c errors.h u128.h
 nm_test_CPPFLAGS = $(CHECK_CPPFLAGS) $(CODE_COVERAGE_CPPFLAGS)
 nm_test_CFLAGS = $(AM_CFLAGS) $(CHECK_CFLAGS) $(CODE_COVERAGE_CFLAGS)
@@ -18,7 +17,12 @@ netmask_TEXINFOS = gpl.texi
 man_MANS = netmask.1
 EXTRA_DIST = $(man_MANS) testscript $(srcdir)/tests/*
 
-TESTS = testscript nm_test
+TESTS = testscript
+if HAVE_LD_WRAP
+TESTS += nm_test
+check_PROGRAMS = nm_test
+endif
+
 
 CODE_COVERAGE_IGNORE_PATTERN = "/usr/include/*" "*_test.c" --ignore-errors unused
 include $(top_srcdir)/aminclude_static.am

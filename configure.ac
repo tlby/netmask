@@ -29,5 +29,17 @@ AC_FUNC_VPRINTF
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([memset strchr strerror strtoul])
 
+AC_MSG_CHECKING([whether the linker supports --wrap])
+save_LDFLAGS="$LDFLAGS"
+LDFLAGS="$LDFLAGS -Wl,--wrap=exit"
+AC_LINK_IFELSE(
+  [AC_LANG_PROGRAM([[#include <stdlib.h>
+int __wrap_exit(int status) { return 0; }]], [[exit(0);]])],
+  [have_wrap_ldflag=yes],
+  [have_wrap_ldflag=no])
+LDFLAGS="$save_LDFLAGS"
+AC_MSG_RESULT([$have_wrap_ldflag])
+AM_CONDITIONAL([HAVE_LD_WRAP], [test x$have_wrap_ldflag = xyes])
+
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

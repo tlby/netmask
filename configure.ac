@@ -9,7 +9,6 @@ AX_CODE_COVERAGE
 
 dnl Checks for programs.
 AC_PROG_CC
-PKG_CHECK_MODULES([CHECK], [check])
 
 dnl Checks for libraries.
 AC_CHECK_INCLUDES_DEFAULT
